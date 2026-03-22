@@ -1,70 +1,107 @@
-# Godot — Breaking Changes
+# Breaking Changes — Godot 4.3 → 4.6.1
 
-Last verified: 2026-02-12
+*Last verified: 2026-03-22*
 
-Changes between Godot versions, focused on post-LLM-cutoff changes (4.4+).
+This document covers breaking changes across versions 4.4, 4.5, and 4.6 that
+may affect code written against Godot 4.3 APIs.
 
-## 4.5 → 4.6 (Jan 2026 — POST-CUTOFF, HIGH RISK)
+---
 
-| Subsystem | Change | Details |
-|-----------|--------|---------|
-| Physics | Jolt is now the DEFAULT 3D physics engine | New projects use Jolt automatically. Existing projects keep their setting. Some HingeJoint3D properties (like `damp`) only work with GodotPhysics. |
-| Rendering | Glow processes BEFORE tonemapping | Was after tonemapping. Scenes with glow will look different. Adjust intensity/blend in WorldEnvironment. |
-| Rendering | D3D12 default on Windows | Was Vulkan. For better driver compatibility. |
-| Rendering | AgX tonemapper new controls | White point and contrast parameters added. |
-| Core | Quaternion initializes to identity | Was zero. Unlikely to affect most code but technically breaking. |
-| UI | Dual-focus system | Mouse/touch focus now separate from keyboard/gamepad focus. Visual feedback differs by input method. |
-| Animation | IK system fully restored | CCDIK, FABRIK, Jacobian IK, Spline IK, TwoBoneIK via SkeletonModifier3D nodes. |
-| Editor | New "Modern" theme default | Grayscale replaces blue-tint. Restore: Editor Settings → Interface → Theme → Style: Classic |
-| Editor | "Select Mode" keybind changed | New "Select Mode" (v key) prevents accidental transforms. Old mode renamed "Transform Mode" (q key). |
-| 2D | TileMapLayer scene tile rotation | Scene tiles can now be rotated like atlas tiles. |
-| Localization | CSV plural form support | No longer requires Gettext for plurals. Context columns added. |
-| C# | Automatic string extraction | Translation strings auto-extracted from C# code. |
-| Plugins | New EditorDock class | Specialized container for plugin docks with layout control. |
+## Godot 4.3 → 4.4
 
-## 4.4 → 4.5 (Late 2025 — POST-CUTOFF, HIGH RISK)
+### Core
+- **UID system** — All resources now have Universal IDs. When opening a 4.3
+  project in 4.4, run the UID upgrade tool to convert resource references.
+  `.uid` files will be created alongside resources.
+- **Typed Dictionaries** — GDScript now supports typed dictionaries
+  (`var d: Dictionary[String, int]`). Existing untyped dictionaries still work.
 
-| Subsystem | Change | Details |
-|-----------|--------|---------|
-| GDScript | Variadic arguments added | Functions can accept `...` arbitrary params — new language feature |
-| GDScript | `@abstract` decorator | Abstract classes and methods now enforceable |
-| GDScript | Script backtracing | Detailed call stacks available even in Release builds |
-| Rendering | Stencil buffer support | New capability for advanced visual effects |
-| Rendering | SMAA 1x antialiasing | New post-processing AA option |
-| Rendering | Shader Baker | Pre-compiles shaders — reportedly 20x faster startup on some demos |
-| Rendering | Bent normal maps, specular occlusion | New material features |
-| Accessibility | Screen reader support | Control nodes work with accessibility tools via AccessKit |
-| Editor | Live translation preview | Test GUI layouts in different languages in-editor |
-| Physics | 3D interpolation rearchitected | Moved from RenderingServer to SceneTree. API unchanged but internals differ. |
-| Animation | BoneConstraint3D | New: AimModifier3D, CopyTransformModifier3D, ConvertTransformModifier3D |
-| Resources | `duplicate_deep()` added | New explicit method for deep duplication of nested resources |
-| Navigation | Dedicated 2D navigation server | No longer a proxy to 3D navigation; smaller export for 2D games |
-| UI | FoldableContainer node | New accordion-style container for collapsible UI sections |
-| UI | Recursive Control behavior | Disable mouse/focus interactions across entire node hierarchies |
-| Platform | visionOS export support | New platform target |
-| Platform | SDL3 gamepad driver | Delegated gamepad handling to SDL library |
-| Platform | Android 16KB page support | Required for Google Play targeting Android 15+ |
+### TileMap
+- `TileMap` node continues to be deprecated in favor of `TileMapLayer`.
+  Use the built-in conversion tool if still using `TileMap`.
 
-## 4.3 → 4.4 (Mid 2025 — NEAR CUTOFF, VERIFY)
+### Physics
+- **Jolt Physics** available as an option for 3D (does not affect 2D projects).
 
-| Subsystem | Change | Details |
-|-----------|--------|---------|
-| Core | `FileAccess.store_*` return `bool` | Was `void`. Methods: `store_8`, `store_16`, `store_32`, `store_64`, `store_buffer`, `store_csv_line`, `store_double`, `store_float`, `store_half`, `store_line`, `store_pascal_string`, `store_real`, `store_string`, `store_var` |
-| Core | `OS.execute_with_pipe` | Added optional `blocking` parameter |
-| Core | `RegEx.compile/create_from_string` | Added optional `show_error` parameter |
-| Rendering | `RenderingDevice.draw_list_begin` | Many parameters removed; `breadcrumb` parameter added |
-| Rendering | Shader texture types | Parameter/return types changed from `Texture2D` to `Texture` |
-| Particles | `.restart()` method | Added optional `keep_seed` parameter (CPU/GPU 2D/3D) |
-| GUI | `RichTextLabel.push_meta` | Added optional `tooltip` parameter |
-| GUI | `GraphEdit.connect_node` | Added optional `keep_alive` parameter |
+### GDScript
+- Typed dictionaries may cause warnings in code that mixes types in dictionaries.
+- Minor changes to error messages and diagnostics formatting.
 
-## 4.2 → 4.3 (In Training Data — LOW RISK)
+### Rendering
+- 2D batching behavior changes for non-default rendering backends.
+- **Ubershaders** and **pipeline pre-compilation** may change shader loading behavior.
 
-| Subsystem | Change | Details |
-|-----------|--------|---------|
-| Animation | `Skeleton3D.add_bone` returns `int32` | Was `void` |
-| Animation | `bone_pose_updated` signal | Replaced by `skeleton_updated` |
-| TileMap | `TileMapLayer` replaces `TileMap` | One node per layer instead of multi-layer single node |
-| Navigation | `NavigationRegion2D` | Removed `avoidance_layers`, `constrain_avoidance` properties |
-| Editor | `EditorSceneFormatImporterFBX` | Renamed to `EditorSceneFormatImporterFBX2GLTF` |
-| Animation | AnimationMixer base class | AnimationPlayer and AnimationTree now extend AnimationMixer |
+---
+
+## Godot 4.4 → 4.5
+
+### TileMap (Critical for Dig & Dash)
+- **Chunk TileMap Physics** — Collision bodies for tiles are now automatically
+  merged into larger shapes. This is a performance improvement but may change
+  collision behavior if code relied on individual tile collision bodies.
+  - If you used `body_entered` signals on individual tiles, test that detection
+    still works as expected.
+  - The optimization is automatic and generally transparent.
+
+### Input
+- **SDL 3 gamepad input** replaces SDL 2. Gamepad mappings may differ slightly.
+
+### Rendering
+- Stencil buffer changes may affect custom shaders that assumed no stencil.
+- Minor SMAA and ambient occlusion behavior changes.
+
+### Accessibility
+- Screen reader support adds new properties to UI nodes. Existing code unaffected.
+
+---
+
+## Godot 4.5 → 4.6
+
+### GUI / UI (May affect menus)
+- **UI Focus separation** — Mouse focus and keyboard focus are now independent.
+  Code that relied on a unified `focus_entered` / `focus_exited` behavior may
+  need adjustment. Specifically:
+  - `Control.focus_mode` behavior is unchanged
+  - But styling and visual feedback for focus may now differ between mouse
+    and keyboard interactions
+  - Test all UI navigation code
+
+### Rendering
+- **Glow processing** now occurs before tonemapping (was after). Default blend
+  mode changed to "screen". Visual appearance of glow effects will change.
+  Review any scenes using glow.
+- **D3D12 is default renderer** on Windows for new projects. Existing projects
+  keep their renderer setting.
+
+### TileMap
+- **TileMapLayer** nodes now avoid unnecessary updates — performance improvement,
+  no API changes.
+- **Scene Collection Source** — New feature allowing scenes as tiles. No breaking
+  changes, purely additive.
+
+### Editor
+- **New "Modern" theme** is now default. No code impact.
+- **Unique Node IDs** — Nodes get internal unique IDs for safer refactoring.
+  No API changes, purely internal improvement.
+- **Flexible docks** — Editor UX change, no code impact.
+
+### GDScript
+- **Language server improvements** — Better docstring rendering.
+- **Debugger "Step Out"** button — New debugging feature, no code impact.
+
+### GDExtension
+- Parameters and return values can be declared as `required`.
+- Interface is now JSON-based. Only affects native extensions, not GDScript.
+
+---
+
+## Summary: Impact on Dig & Dash
+
+| Area | Risk | Action Required |
+|------|------|----------------|
+| TileMap → TileMapLayer | ⚠️ Medium | Use `TileMapLayer` from the start (not deprecated `TileMap`) |
+| Chunk Physics | ✅ Low | Automatic optimization, test collision signals |
+| UI Focus | ⚠️ Medium | Test menu navigation with keyboard and mouse |
+| Glow Effects | ✅ Low | Review visual settings if using glow |
+| UID System | ✅ Low | Automatic for new projects |
+| Typed Dictionaries | ✅ Low | Use for cleaner code, not required |
