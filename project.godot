@@ -1,7 +1,10 @@
 ; Engine configuration file.
 ; It's best edited using the editor UI and not directly,
-; but that's also a valid option.
-; Resource paths can be relative or absolute; if absolute, they must be accessible whenever running the project.
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -10,8 +13,8 @@ config_version=5
 config/name="Dig & Dash"
 config/description="A 2D grid-based puzzle-platformer inspired by Lode Runner."
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/run/main_scene="res://scenes/levels/level_01.tscn"
 config/icon="res://icon.svg"
+config/run/main_scene="res://scenes/levels/level_01.tscn"
 
 [display]
 
@@ -19,11 +22,7 @@ window/size/viewport_width=640
 window/size/viewport_height=360
 window/size/window_width_override=1280
 window/size/window_height_override=720
-window/size/initial_screen=0
-window/size/mode=0
-window/size/resizable=true
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [input]
 
