@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EnemyConfig" format=3]
+
+[ext_resource type="Script" path="res://src/gameplay/enemy/enemy_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+detection_range = 8
+move_speed = 5.0
+trap_escape_time = 8.0
+respawn_delay = 2.0
