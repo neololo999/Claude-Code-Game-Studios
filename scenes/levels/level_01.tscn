@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://src/gameplay/level/level_system.gd" id="1_lvlsys"]
 [ext_resource type="Script" path="res://src/systems/grid/grid_system.gd" id="2_grdsys"]
@@ -11,6 +11,13 @@
 [ext_resource type="Resource" uid="uid://gv5r8n2k6cqw1" path="res://resources/configs/gravity_config.tres" id="9_gcfg"]
 [ext_resource type="Resource" uid="uid://bx7q3n4m8ckv2" path="res://resources/configs/input_config.tres" id="10_icfg"]
 [ext_resource type="Resource" path="res://resources/configs/enemy_config.tres" id="11_ecres"]
+[ext_resource type="Script" path="res://src/gameplay/player/dig_system.gd" id="12_digsys"]
+[ext_resource type="Resource" path="res://resources/configs/dig_config.tres" id="13_dcfg"]
+[ext_resource type="Script" path="res://src/systems/rendering/terrain_renderer.gd" id="14_trr"]
+[ext_resource type="Script" path="res://src/systems/rendering/entity_renderer.gd" id="15_entr"]
+[ext_resource type="Script" path="res://src/systems/camera/camera_controller.gd" id="16_cam"]
+[ext_resource type="Resource" path="res://resources/configs/camera_config.tres" id="17_camcfg"]
+[ext_resource type="Script" path="res://src/systems/hud/hud_controller.gd" id="18_hud"]
 
 [node name="Level01" type="Node"]
 script = ExtResource("1_lvlsys")
@@ -24,6 +31,11 @@ terrain_config = ExtResource("8_tcfg")
 gravity_config = ExtResource("9_gcfg")
 input_config = ExtResource("10_icfg")
 enemy_config = ExtResource("11_ecres")
+dig = NodePath("DigSystem")
+terrain_renderer = NodePath("TerrainRenderer")
+entity_renderer = NodePath("EntityRenderer")
+camera = NodePath("CameraController")
+hud = NodePath("HUDLayer")
 
 [node name="GridSystem" type="Node" parent="."]
 script = ExtResource("2_grdsys")
@@ -37,8 +49,69 @@ script = ExtResource("4_grvty")
 [node name="PlayerMovement" type="Node2D" parent="."]
 script = ExtResource("5_plrmv")
 
+[node name="DigSystem" type="Node" parent="."]
+script = ExtResource("12_digsys")
+config = ExtResource("13_dcfg")
+
 [node name="PickupSystem" type="Node" parent="."]
 script = ExtResource("6_pckup")
 
 [node name="InputSystem" type="Node" parent="."]
 script = ExtResource("7_input")
+
+[node name="TerrainRenderer" type="Node2D" parent="."]
+script = ExtResource("14_trr")
+
+[node name="EntityRenderer" type="Node2D" parent="."]
+script = ExtResource("15_entr")
+
+[node name="CameraController" type="Camera2D" parent="."]
+script = ExtResource("16_cam")
+config = ExtResource("17_camcfg")
+
+[node name="HUDLayer" type="CanvasLayer" parent="."]
+layer = 10
+script = ExtResource("18_hud")
+
+[node name="TreasureLabel" type="Label" parent="HUDLayer"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 200.0
+offset_bottom = 32.0
+text = "💎 0 / 0"
+
+[node name="DigBarBg" type="ColorRect" parent="HUDLayer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -28.0
+offset_right = 100.0
+offset_bottom = -8.0
+color = Color(0.2, 0.2, 0.2, 0.8)
+
+[node name="DigBarFill" type="ColorRect" parent="HUDLayer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -28.0
+offset_right = 100.0
+offset_bottom = -8.0
+color = Color(0.0, 0.8, 0.2, 1.0)
+
+[node name="ExitLabel" type="Label" parent="HUDLayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -140.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 32.0
+text = "EXIT OPEN →"
+visible = false
+

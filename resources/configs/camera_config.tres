@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="CameraConfig" load_steps=2 format=3 uid="uid://cam_cfg_001"]
+
+[ext_resource type="Script" path="res://src/systems/camera/camera_config.gd" id="1_camcfg"]
+
+[resource]
+script = ExtResource("1_camcfg")
+smooth_speed = 5.0

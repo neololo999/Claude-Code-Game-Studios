@@ -120,6 +120,13 @@ func reset() -> void:
 	_cooldown_timer = 0.0
 	set_process(false)
 
+## Return dig cooldown progress as 0.0 (ready / no cooldown) to 1.0 (just started).
+## Used by HUDController to drive the cooldown indicator bar.
+func get_cooldown_ratio() -> float:
+	if config == null or config.dig_cooldown <= 0.0:
+		return 0.0
+	return clampf(_cooldown_timer / config.dig_cooldown, 0.0, 1.0)
+
 # ---------------------------------------------------------------------------
 # Signal callbacks
 # ---------------------------------------------------------------------------

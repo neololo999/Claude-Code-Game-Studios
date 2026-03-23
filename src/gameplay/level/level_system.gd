@@ -84,6 +84,16 @@ signal game_completed
 @export var input_config: InputConfig
 @export var enemy_config: EnemyConfig
 
+## Optional rendering + HUD nodes — wired in scene for Vertical Slice.
+## All are null-safe; the game runs correctly without them (MVP mode).
+@export var terrain_renderer: TerrainRenderer
+@export var entity_renderer: EntityRenderer
+@export var camera: CameraController
+@export var hud: HUDController
+
+## DigSystem — optional but required for dig mechanics and HUD cooldown display.
+@export var dig: DigSystem
+
 # ---------------------------------------------------------------------------
 # Public read-only state
 # ---------------------------------------------------------------------------
@@ -214,6 +224,12 @@ func _initialize_level(data: LevelData) -> void:
 		# Step 5: PickupSystem — connects player.player_moved internally.
 		pickups.setup(grid, player)
 
+		# Step 5b: DigSystem — optional; wires terrain/gravity/player + input signal.
+		if dig != null:
+			dig.setup(terrain, gravity, player, terrain_config, player.entity_id)
+			if not input_node.dig_requested.is_connected(dig._on_dig_requested):
+				input_node.dig_requested.connect(dig._on_dig_requested)
+
 		_is_initialized = true
 
 	# -----------------------------------------------------------------------
@@ -247,6 +263,25 @@ func _initialize_level(data: LevelData) -> void:
 	# Step 10: Connect level-end signals (guarded by is_connected).
 	# -----------------------------------------------------------------------
 	_connect_level_signals()
+
+	# -----------------------------------------------------------------------
+	# Step 11: Rendering + HUD — null-safe, skipped if not wired in scene.
+	# -----------------------------------------------------------------------
+	if terrain_renderer != null:
+		terrain_renderer.setup(grid, terrain)
+		terrain_renderer.refresh()
+	if entity_renderer != null:
+		var enemy_nodes: Array[Node2D] = []
+		for e: EnemyController in _enemies:
+			enemy_nodes.append(e)
+		entity_renderer.setup(player, enemy_nodes)
+	if camera != null:
+		camera.setup(player, data)
+	if hud != null:
+		if not _is_initialized or hud.get_meta("_hud_setup_done", false) == false:
+			hud.setup(pickups, dig, self)
+			hud.set_meta("_hud_setup_done", true)
+		hud.initialize(data.pickup_cells.size())
 
 
 ## Dynamically create one EnemyController child node per enemy_spawn entry.
@@ -314,6 +349,8 @@ func _do_restart() -> void:
 	# pickups.reset() restores pickup registry (initialize() will reinstate too,
 	# but spec requires explicit reset here).
 	pickups.reset()
+	if dig != null:
+		dig.reset()
 	# gravity.reset() clears entity registry so player.spawn() starts clean.
 	gravity.reset()
 	# terrain.reset() restores any dug holes before terrain.initialize() overwrites.
@@ -321,6 +358,10 @@ func _do_restart() -> void:
 
 	# Re-initialise with the same level data.
 	_initialize_level(_current_level_data)
+
+	# Snap camera to player after restart — no interpolation lag.
+	if camera != null:
+		camera.reset()
 
 	level_state = State.RUNNING
 	level_restarted.emit()
