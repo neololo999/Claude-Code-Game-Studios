@@ -1,6 +1,6 @@
 # Milestone: MVP — First Playable Prototype
 
-> **Status**: In Progress — Sprint 3 complete ✅ / Sprint 4 in progress
+> **Status**: In Progress — Sprint 4 complete ✅ / Sprint 5 in progress
 > **Target Date**: 2026-05-31
 > **Created**: 2026-03-23
 > **Owner**: Producer
@@ -64,8 +64,8 @@ The MVP is **done** when ALL of the following are true:
 | 6 | **Dig System** | `dig-system.md` | M (2.5d) | Sprint 2 | ✅ Done (Sprint 2) |
 | 7 | **Pickup System** | `pickup-system.md` | S (1d) | Sprint 2 | ✅ Done (Sprint 2) |
 | 8 | **Enemy AI** | `enemy-ai.md` | L (4d+) | Sprint 3–4 | ✅ Done (Sprint 3) |
-| 9 | **Level System** | `level-system.md` | M (2.5d) | Sprint 4 | 🟡 In Progress (Sprint 4) |
-| — | **10 Playable Levels** | — | S (1.5d) | Sprint 4–5 | 🟡 In Progress (Sprint 4) |
+| 9 | **Level System** | `level-system.md` | M (2.5d) | Sprint 4 | ✅ Done (Sprint 4) |
+| — | **10 Playable Levels** | — | S (1.5d) | Sprint 4–5 | 🟡 In Progress (Sprint 5) (levels 1–5 done) |
 
 > Input System is complete and excluded from remaining capacity calculations.
 
@@ -111,8 +111,8 @@ The MVP is **done** when ALL of the following are true:
 | **Sprint 1** | 2026-03-23 → 2026-04-05 | Godot project + Grid + Terrain + Grid Gravity + Player Movement ✅ **Delivered (all Must Have + stretch)** |
 | **Sprint 2** | 2026-04-06 → 2026-04-19 | Dig System + Pickup System + integration smoke-test scene ✅ **Delivered (all Must Have)** |
 | **Sprint 3** | 2026-04-20 → 2026-05-03 | Enemy AI (core patrol + fall-into-hole + chase + TRAPPED/DEAD + integration) ✅ **Delivered (all Must Have + all stretch — 120% velocity)** |
-| **Sprint 4** | 2026-05-04 → 2026-05-17 | Level System + Levels 1–5 *(in progress)* |
-| **Sprint 5** | 2026-05-18 → 2026-05-31 | Levels 6–10 + integration pass + bug fixes + MVP sign-off |
+| **Sprint 4** | 2026-05-04 → 2026-05-17 | Level System + Levels 1–5 ✅ **Delivered (all Must Have — 100% velocity)** |
+| **Sprint 5** | 2026-05-18 → 2026-05-31 | Levels 6–10 + integration pass + bug fixes + MVP sign-off *(in progress)* |
 
 > Capacity: 5 effective days/sprint (6 days − 20% buffer), solo developer at 3 days/week.
 
@@ -189,4 +189,4 @@ Key additions for Vertical Slice:
 
 ---
 
-*Document owner: Producer | Last updated: 2026-05-04*
+*Document owner: Producer | Last updated: 2026-05-18*
