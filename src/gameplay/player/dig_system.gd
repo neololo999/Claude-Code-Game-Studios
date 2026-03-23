@@ -28,6 +28,14 @@ extends Node
 enum _DigState { READY, DIGGING }
 
 # ---------------------------------------------------------------------------
+# Exports
+# ---------------------------------------------------------------------------
+
+## Dig timing configuration. Assign in the Inspector or inject via setup().
+## Falls back to DigConfig.new() defaults if null.
+@export var config: DigConfig
+
+# ---------------------------------------------------------------------------
 # Signals
 # ---------------------------------------------------------------------------
 
@@ -62,6 +70,8 @@ var _player_id: int = 0
 # ---------------------------------------------------------------------------
 
 func _ready() -> void:
+	if config == null:
+		config = DigConfig.new()
 	# _process is enabled only while DIGGING to save CPU when idle.
 	set_process(false)
 
@@ -156,7 +166,7 @@ func _on_dig_requested(direction: Vector2i) -> void:
 
 	# --- All validations passed — initiate the dig ---
 	_dig_state = _DigState.DIGGING
-	_cooldown_timer = _terrain_config.dig_duration
+	_cooldown_timer = config.dig_cooldown
 	_last_dig_cell = target
 
 	# EC-02: grant dig immunity BEFORE opening the hole so GridGravity
