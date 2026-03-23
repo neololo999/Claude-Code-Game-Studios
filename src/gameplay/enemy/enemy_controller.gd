@@ -242,11 +242,15 @@ func _process_patrol(delta: float) -> void:
 ## Advance one chase step toward the player.
 ##
 ## Uses greedy Manhattan-distance reduction.  If no valid neighbor reduces the
-## distance (deadlock), the enemy stays put but re-evaluates detection every
-## frame — allowing it to resume PATROL if the player leaves range (S3-R02).
+## distance (deadlock), the enemy stays put but re-evaluates range every frame.
+##
+## Design rule: CHASE exits only when the player leaves detection_range.  LOS
+## is NOT re-checked during an active chase — once pursuing, the enemy keeps
+## going until the player is out of range.  This allows pursuit through LADDER
+## columns which block LOS (LADDER tiles are SOLID per TerrainSystem).
 func _process_chase(delta: float) -> void:
-	# Re-evaluate: player may have left detection range since last frame.
-	if not _is_player_detectable():
+	# Re-evaluate range only — LOS is intentionally not checked mid-chase.
+	if _manhattan(current_cell, _player_cell) > config.detection_range:
 		_state = State.PATROL
 		return
 
@@ -268,8 +272,8 @@ func _process_chase(delta: float) -> void:
 		if current_cell == _player_cell:
 			enemy_reached_player.emit(enemy_id, current_cell)
 
-	# Re-evaluate after move (or after staying put).
-	if not _is_player_detectable():
+	# Re-evaluate range after move (or after staying put).
+	if _manhattan(current_cell, _player_cell) > config.detection_range:
 		_state = State.PATROL
 
 
