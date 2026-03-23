@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="AudioConfig" load_steps=2 format=3 uid="uid://aud_cfg_001"]
+
+[ext_resource type="Script" path="res://src/systems/audio/audio_config.gd" id="1_audcfg"]
+
+[resource]
+script = ExtResource("1_audcfg")
+sfx_volume_db = 0.0
+music_volume_db = -6.0

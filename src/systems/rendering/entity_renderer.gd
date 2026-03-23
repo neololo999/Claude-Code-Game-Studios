@@ -1,15 +1,23 @@
-## EntityRenderer — draws player and enemy positions as colored rectangles.
+## EntityRenderer — draws player and enemy positions using sprites or colored rects.
 ##
-## Tracks Node2D positions in _process and repositions colored rects.
-## Player = blue (#00AAFF), Enemies = red (#FF2222).
-## One cell-sized rect per entity.
+## In Sprint 7+: loads PNG textures from assets/sprites/entities/ if present.
+## Falls back to ColorRect rendering if textures absent.
 ##
-## Implements: production/sprints/sprint-06.md#RENDER-02
+## Player texture: res://assets/sprites/entities/player.png  (blue #00AAFF fallback)
+## Enemy texture:  res://assets/sprites/entities/enemy.png   (red  #FF2222 fallback)
+##
+## Implements: production/sprints/sprint-07.md#SPRITE-02
 class_name EntityRenderer
 extends Node2D
 
+const PLAYER_TEXTURE_PATH: String = "res://assets/sprites/entities/player.png"
+const ENEMY_TEXTURE_PATH:  String = "res://assets/sprites/entities/enemy.png"
+
 const PLAYER_COLOUR: Color = Color("#00AAFF")
 const ENEMY_COLOUR:  Color = Color("#FF2222")
+
+var _player_texture: Texture2D = null
+var _enemy_texture:  Texture2D = null
 
 var _player: Node2D = null
 var _enemies: Array[Node2D] = []
@@ -22,11 +30,23 @@ var _enemies: Array[Node2D] = []
 func setup(player: Node2D, enemies: Array[Node2D]) -> void:
 	_player  = player
 	_enemies = enemies.duplicate()
+	_load_textures()
 
 
 ## Update enemy list — call when enemies are added/removed (e.g. level load).
 func set_enemies(enemies: Array[Node2D]) -> void:
 	_enemies = enemies.duplicate()
+
+
+# ---------------------------------------------------------------------------
+# Texture loading
+# ---------------------------------------------------------------------------
+
+func _load_textures() -> void:
+	_player_texture = ResourceLoader.load(PLAYER_TEXTURE_PATH) as Texture2D \
+		if ResourceLoader.exists(PLAYER_TEXTURE_PATH) else null
+	_enemy_texture  = ResourceLoader.load(ENEMY_TEXTURE_PATH) as Texture2D \
+		if ResourceLoader.exists(ENEMY_TEXTURE_PATH) else null
 
 
 # ---------------------------------------------------------------------------
@@ -43,13 +63,21 @@ func _draw() -> void:
 	var half: float = GridSystem.CELL_SIZE / 2.0
 	var size := Vector2(GridSystem.CELL_SIZE, GridSystem.CELL_SIZE)
 
-	# Player — centred on Node2D world position.
+	# Player.
 	var p_local: Vector2 = to_local(_player.global_position)
-	draw_rect(Rect2(p_local - Vector2(half, half), size), PLAYER_COLOUR)
+	var p_rect  := Rect2(p_local - Vector2(half, half), size)
+	if _player_texture != null:
+		draw_texture_rect(_player_texture, p_rect, false)
+	else:
+		draw_rect(p_rect, PLAYER_COLOUR)
 
 	# Enemies.
 	for enemy in _enemies:
 		if enemy == null or not is_instance_valid(enemy):
 			continue
 		var e_local: Vector2 = to_local(enemy.global_position)
-		draw_rect(Rect2(e_local - Vector2(half, half), size), ENEMY_COLOUR)
+		var e_rect  := Rect2(e_local - Vector2(half, half), size)
+		if _enemy_texture != null:
+			draw_texture_rect(_enemy_texture, e_rect, false)
+		else:
+			draw_rect(e_rect, ENEMY_COLOUR)

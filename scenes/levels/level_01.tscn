@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://src/gameplay/level/level_system.gd" id="1_lvlsys"]
 [ext_resource type="Script" path="res://src/systems/grid/grid_system.gd" id="2_grdsys"]
@@ -18,6 +18,9 @@
 [ext_resource type="Script" path="res://src/systems/camera/camera_controller.gd" id="16_cam"]
 [ext_resource type="Resource" path="res://resources/configs/camera_config.tres" id="17_camcfg"]
 [ext_resource type="Script" path="res://src/systems/hud/hud_controller.gd" id="18_hud"]
+[ext_resource type="Script" path="res://src/systems/audio/audio_system.gd" id="19_aud"]
+[ext_resource type="Resource" path="res://resources/configs/audio_config.tres" id="20_audcfg"]
+[ext_resource type="Script" path="res://src/systems/vfx/vfx_system.gd" id="21_vfx"]
 
 [node name="Level01" type="Node"]
 script = ExtResource("1_lvlsys")
@@ -36,6 +39,8 @@ terrain_renderer = NodePath("TerrainRenderer")
 entity_renderer = NodePath("EntityRenderer")
 camera = NodePath("CameraController")
 hud = NodePath("HUDLayer")
+audio = NodePath("AudioSystem")
+vfx = NodePath("VfxSystem")
 
 [node name="GridSystem" type="Node" parent="."]
 script = ExtResource("2_grdsys")
@@ -68,6 +73,20 @@ script = ExtResource("15_entr")
 [node name="CameraController" type="Camera2D" parent="."]
 script = ExtResource("16_cam")
 config = ExtResource("17_camcfg")
+
+[node name="AudioSystem" type="Node" parent="."]
+script = ExtResource("19_aud")
+config = ExtResource("20_audcfg")
+
+[node name="SfxPlayer" type="AudioStreamPlayer" parent="AudioSystem"]
+
+[node name="SfxPlayerB" type="AudioStreamPlayer" parent="AudioSystem"]
+
+[node name="MusicPlayer" type="AudioStreamPlayer" parent="AudioSystem"]
+autoplay = false
+
+[node name="VfxSystem" type="Node2D" parent="."]
+script = ExtResource("21_vfx")
 
 [node name="HUDLayer" type="CanvasLayer" parent="."]
 layer = 10

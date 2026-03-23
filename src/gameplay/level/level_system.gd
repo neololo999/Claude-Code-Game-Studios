@@ -94,6 +94,10 @@ signal game_completed
 ## DigSystem — optional but required for dig mechanics and HUD cooldown display.
 @export var dig: DigSystem
 
+## Sprint 7: Audio + VFX nodes — null-safe like rendering nodes.
+@export var audio: AudioSystem
+@export var vfx: VfxSystem
+
 # ---------------------------------------------------------------------------
 # Public read-only state
 # ---------------------------------------------------------------------------
@@ -282,6 +286,12 @@ func _initialize_level(data: LevelData) -> void:
 			hud.setup(pickups, dig, self)
 			hud.set_meta("_hud_setup_done", true)
 		hud.initialize(data.pickup_cells.size())
+	if audio != null and not audio.get_meta("_audio_setup_done", false):
+		audio.setup(dig, pickups, self)
+		audio.set_meta("_audio_setup_done", true)
+	if vfx != null and not vfx.get_meta("_vfx_setup_done", false):
+		vfx.setup(camera, pickups, self, grid)
+		vfx.set_meta("_vfx_setup_done", true)
 
 
 ## Dynamically create one EnemyController child node per enemy_spawn entry.
@@ -362,6 +372,8 @@ func _do_restart() -> void:
 	# Snap camera to player after restart — no interpolation lag.
 	if camera != null:
 		camera.reset()
+	if vfx != null:
+		vfx.reset()
 
 	level_state = State.RUNNING
 	level_restarted.emit()
