@@ -66,6 +66,9 @@ signal level_victory
 ## Emitted after a restart completes and the level re-enters RUNNING.
 signal level_restarted
 
+## Emitted when the last level is beaten and there is no next level.
+signal game_completed
+
 # ---------------------------------------------------------------------------
 # @export variables — injected from the scene
 # ---------------------------------------------------------------------------
@@ -329,9 +332,10 @@ func _do_next_level() -> void:
 	level_state = State.TRANSITIONING
 	var next_id: String = _get_next_level_id()
 	if next_id.is_empty():
-		# EC-01: last level — show end-game screen (stub).
+		# EC-01: last level — notify listeners then idle.
 		level_state = State.IDLE
 		print("[LevelSystem] All levels complete! YOU WIN!")
+		game_completed.emit()
 		return
 	load_level(next_id)
 
