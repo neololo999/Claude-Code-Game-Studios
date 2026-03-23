@@ -14,10 +14,12 @@
 ##   5. DigSystem.setup(terrain, gravity, player, terrain_config, player_id)
 ##   6. PickupSystem.setup(grid, player)
 ##      — Internally connects player.player_moved.
-##   7. Connect input.dig_requested → dig._on_dig_requested
-##   8. Connect player/dig/pickup signals → local feedback callbacks
-##   9. _initialize_level() — builds flat terrain array, calls terrain.initialize(),
-##        spawns player (which registers with gravity), initialises pickups.
+##   7. EnemyController.setup(grid, terrain, gravity, player, enemy_config, enemy_id)
+##      — Registers enemy with GridGravity and connects player.player_moved.
+##   8. Connect input.dig_requested → dig._on_dig_requested
+##   9. Connect player/dig/pickup/enemy signals → local feedback callbacks
+##  10. _initialize_level() — builds flat terrain array, calls terrain.initialize(),
+##        spawns player (which registers with gravity), initialises pickups and enemy.
 ##
 ## Implements: production/sprints/sprint-02.md#INT-01
 class_name LevelBootstrap
@@ -34,6 +36,7 @@ extends Node
 @export var dig: DigSystem
 @export var pickups: PickupSystem
 @export var input: InputSystem
+@export var enemy: EnemyController
 
 # ---------------------------------------------------------------------------
 # Exports — config resources (optional; fall back to defaults when null)
@@ -42,6 +45,7 @@ extends Node
 @export var terrain_config_res: TerrainConfig
 @export var gravity_config_res: GravityConfig
 @export var input_config_res: InputConfig
+@export var enemy_config_res: EnemyConfig
 
 # ---------------------------------------------------------------------------
 # Exports — level parameters
@@ -54,6 +58,8 @@ extends Node
 	Vector2i(3, 1), Vector2i(6, 1), Vector2i(8, 3)
 ]
 @export var exit_position: Vector2i = Vector2i(9, 1)
+@export var enemy_spawn: Vector2i = Vector2i(8, 1)
+@export var enemy_rescate: Vector2i = Vector2i(5, 0)
 
 # ---------------------------------------------------------------------------
 # Built-in virtual methods
@@ -116,14 +122,22 @@ func _ready() -> void:
 	pickups.setup(grid, player)
 
 	# -----------------------------------------------------------------------
-	# Step 7 — Dig input connection
+	# Step 7 — EnemyController
+	# setup(grid, terrain, gravity, player, config, enemy_id) — after all
+	# terrain/gravity/player systems are ready.  Skipped gracefully when null.
+	# -----------------------------------------------------------------------
+	if enemy != null:
+		enemy.setup(grid, terrain, gravity, player, enemy_config_res, 1)
+
+	# -----------------------------------------------------------------------
+	# Step 8 — Dig input connection
 	# InputSystem.dig_requested is a one-shot per key-down; DigSystem exposes
 	# _on_dig_requested(direction: Vector2i) as its handler.
 	# -----------------------------------------------------------------------
 	input.dig_requested.connect(dig._on_dig_requested)
 
 	# -----------------------------------------------------------------------
-	# Step 8 — Console feedback signals
+	# Step 9 — Console feedback signals
 	# -----------------------------------------------------------------------
 	player.player_moved.connect(_on_player_moved)
 	dig.dig_started.connect(_on_dig_started)
@@ -132,7 +146,7 @@ func _ready() -> void:
 	pickups.player_reached_exit.connect(_on_player_won)
 
 	# -----------------------------------------------------------------------
-	# Step 9 — Build terrain, spawn player, register pickups
+	# Step 10 — Build terrain, spawn player, register pickups and enemy
 	# -----------------------------------------------------------------------
 	_initialize_level()
 
@@ -140,7 +154,8 @@ func _ready() -> void:
 # Private methods
 # ---------------------------------------------------------------------------
 
-## Build and load the level layout, then spawn the player and register pickups.
+## Build and load the level layout, then spawn the player, register pickups,
+## and spawn the enemy.
 ##
 ## Grid layout (10 cols × 8 rows; row 0 = top, row 7 = bottom):
 ##   Row 7 : SOLID floor across all columns
@@ -194,6 +209,13 @@ func _initialize_level() -> void:
 	# Register pickups and exit cell with PickupSystem.
 	pickups.initialize(pickup_positions, exit_position)
 
+	# Spawn enemy and connect feedback signals.
+	if enemy != null:
+		enemy.spawn(enemy_spawn, enemy_rescate)
+		enemy.enemy_reached_player.connect(_on_enemy_reached_player)
+		enemy.enemy_trapped.connect(_on_enemy_trapped)
+		enemy.enemy_escaped.connect(_on_enemy_escaped)
+
 	print("[INT] Level initialized: %d×%d grid, %d pickups, exit at %s" % [
 		grid_cols, grid_rows, pickup_positions.size(), exit_position
 	])
@@ -222,3 +244,15 @@ func _on_all_collected() -> void:
 
 func _on_player_won() -> void:
 	print("[INT] Player reached exit — LEVEL COMPLETE!")
+
+
+func _on_enemy_reached_player(enemy_id: int, cell: Vector2i) -> void:
+	print("[INT] Enemy %d reached player at %s — PLAYER DIES!" % [enemy_id, cell])
+
+
+func _on_enemy_trapped(enemy_id: int, cell: Vector2i) -> void:
+	print("[INT] Enemy %d TRAPPED in hole at %s!" % [enemy_id, cell])
+
+
+func _on_enemy_escaped(enemy_id: int) -> void:
+	print("[INT] Enemy %d escaped and respawned!" % [enemy_id])
