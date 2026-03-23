@@ -140,7 +140,13 @@ func load_level(level_id: String) -> void:
 	var path: String = LEVELS_DIR + level_id + ".tres"
 	var data: LevelData = ResourceLoader.load(path) as LevelData
 	if data == null:
-		push_error("LevelSystem: could not load level data from %s" % path)
+		# Fallback: generate the level in code. Allows play without .tres files.
+		data = LevelBuilder.build(level_id)
+	if data == null:
+		push_error(
+			"LevelSystem: could not load or build level '%s' (tried %s)"
+			% [level_id, path]
+		)
 		level_state = State.IDLE
 		return
 
@@ -329,21 +335,26 @@ func _do_next_level() -> void:
 
 
 ## Scan LEVELS_DIR alphabetically and return the level_id that follows the
-## current one. Returns "" if the current level is the last or the dir is
-## empty/inaccessible.
+## current one. Falls back to LevelBuilder.LEVEL_IDS when no .tres files are
+## present so code-generated levels advance correctly without any .tres files.
+## Returns "" if the current level is the last or the dir is inaccessible.
 func _get_next_level_id() -> String:
-	var dir: DirAccess = DirAccess.open(LEVELS_DIR)
-	if dir == null:
-		return ""
 	var files: Array[String] = []
-	dir.list_dir_begin()
-	var fname: String = dir.get_next()
-	while fname != "":
-		if fname.ends_with(".tres"):
-			files.append(fname.get_basename())
-		fname = dir.get_next()
-	dir.list_dir_end()
-	files.sort()
+	var dir: DirAccess = DirAccess.open(LEVELS_DIR)
+	if dir != null:
+		dir.list_dir_begin()
+		var fname: String = dir.get_next()
+		while fname != "":
+			if fname.ends_with(".tres"):
+				files.append(fname.get_basename())
+			fname = dir.get_next()
+		dir.list_dir_end()
+		files.sort()
+
+	# When no .tres files exist, use the builder's ordered level list.
+	if files.is_empty():
+		files.assign(LevelBuilder.LEVEL_IDS)
+
 	var idx: int = files.find(_current_level_data.level_id)
 	if idx < 0 or idx + 1 >= files.size():
 		return ""
