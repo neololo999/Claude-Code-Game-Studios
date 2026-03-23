@@ -64,6 +64,22 @@ const _HOLE_DATA: Array[int] = [
 	1, 1, 1, 1, 1,  # row 4
 ]
 
+## Ladder grid — LADDER at column 1 (rows 0-3), SOLID floor at row 4.
+## Used by AC-10 to test vertical movement on a LADDER column.
+##   Col:  0    1    2    3    4
+##   Row 0: [ E,   L,   E,   E,   E ]   L = LADDER (4)
+##   Row 1: [ E,   L,   E,   E,   E ]
+##   Row 2: [ E,   L,   E,   E,   E ]
+##   Row 3: [ E,   L,   E,   E,   E ]   ← enemy at (1,3)
+##   Row 4: [ S,   S,   S,   S,   S ]   ← solid floor (overwrites (1,4))
+const _LADDER_DATA: Array[int] = [
+	0, 4, 0, 0, 0,  # row 0 — LADDER at (1,0)
+	0, 4, 0, 0, 0,  # row 1 — LADDER at (1,1)
+	0, 4, 0, 0, 0,  # row 2 — LADDER at (1,2)
+	0, 4, 0, 0, 0,  # row 3 — LADDER at (1,3)
+	1, 1, 1, 1, 1,  # row 4 — SOLID floor
+]
+
 
 # ---------------------------------------------------------------------------
 # Entry point
@@ -83,6 +99,12 @@ func _run_all_tests() -> void:
 	await _test_ac08a_trapped_timer_expires_dead()
 	await _test_ac08b_dead_timer_expires_patrol()
 	_test_ac11_reset_returns_to_spawn()
+	_test_ac03_patrol_to_chase()
+	_test_ac04_chase_greedy()
+	_test_ac05_chase_to_patrol()
+	_test_ac09_reached_player()
+	_test_ac10_chase_ladder_vertical()
+	_test_ac12_player_cell_update()
 	print("=== Done ===")
 
 
@@ -455,4 +477,157 @@ func _test_ac11_reset_returns_to_spawn() -> void:
 			"[FAIL] AC-11: expected cell=%s PATROL — got cell=%s state=%s"
 			% [spawn, enemy.current_cell, EnemyController.State.keys()[enemy._state]]
 		)
+	_teardown_world(world)
+
+
+# ---------------------------------------------------------------------------
+# AC-03 — Player in detection range + clear LOS → PATROL transitions to CHASE
+# ---------------------------------------------------------------------------
+
+## Enemy at (0,3), player at (4,3): same row, clear LOS, dist=4 ≤ 8.
+## _process_patrol checks _is_player_detectable() before the move timer.
+## Expected: state == CHASE after a single _process call.
+func _test_ac03_patrol_to_chase() -> void:
+	var world := _make_world()
+	var enemy: EnemyController = world["enemy"]
+	# Place enemy at (0,3), player at (4,3) — same row, clear LOS, dist=4 ≤ 8
+	enemy.spawn(Vector2i(0, 3), Vector2i(0, 0))
+	enemy._player_cell = Vector2i(4, 3)
+	# Trigger _process_patrol by advancing the move timer past expiry.
+	# The PATROL→CHASE check fires before the timer, so any delta works.
+	enemy._process(1.0 / enemy.config.move_speed + 0.01)
+	if enemy._state == EnemyController.State.CHASE:
+		print("[PASS] AC-03: PATROL → CHASE when player detectable")
+	else:
+		print("[FAIL] AC-03: expected CHASE got %s" % EnemyController.State.keys()[enemy._state])
+	_teardown_world(world)
+
+
+# ---------------------------------------------------------------------------
+# AC-04 — In CHASE, enemy moves toward cell that minimises Manhattan distance
+# ---------------------------------------------------------------------------
+
+## Enemy at (0,3) in CHASE, player at (4,3).  move_timer forced to 0.
+## Greedy step: only (1,3) reduces Manhattan distance and passes can_enter.
+## Expected: enemy_moved fires with to=(1,3).
+func _test_ac04_chase_greedy() -> void:
+	var world := _make_world()
+	var enemy: EnemyController = world["enemy"]
+	enemy.spawn(Vector2i(0, 3), Vector2i(0, 0))
+	enemy._player_cell = Vector2i(4, 3)
+	enemy._state = EnemyController.State.CHASE
+
+	var moved_to: Vector2i = Vector2i(-1, -1)
+	enemy.enemy_moved.connect(func(_id: int, _from: Vector2i, to: Vector2i) -> void:
+		moved_to = to
+	)
+	# Force move_timer to expire so the step executes immediately.
+	enemy._move_timer = 0.0
+	enemy._process(0.0)
+	if moved_to == Vector2i(1, 3):  # one step right toward player at (4,3)
+		print("[PASS] AC-04: CHASE moves toward player (greedy)")
+	else:
+		print("[FAIL] AC-04: expected (1,3) got %s" % moved_to)
+	_teardown_world(world)
+
+
+# ---------------------------------------------------------------------------
+# AC-05 — Player leaves detection range → CHASE reverts to PATROL
+# ---------------------------------------------------------------------------
+
+## Enemy at (0,3), detection_range=2, player at (4,3): dist=4 > range=2.
+## _process_chase fires the "not detectable" guard on the first call.
+## Expected: state == PATROL after a single _process call.
+func _test_ac05_chase_to_patrol() -> void:
+	var world := _make_world()
+	var enemy: EnemyController = world["enemy"]
+	enemy.spawn(Vector2i(0, 3), Vector2i(0, 0))
+	enemy.config.detection_range = 2  # short range
+	enemy._player_cell = Vector2i(4, 3)  # dist=4 > range=2
+	enemy._state = EnemyController.State.CHASE
+	# A single _process call should detect "not detectable" and revert.
+	enemy._process(0.01)
+	if enemy._state == EnemyController.State.PATROL:
+		print("[PASS] AC-05: CHASE → PATROL when player out of range")
+	else:
+		print("[FAIL] AC-05: expected PATROL got %s" % EnemyController.State.keys()[enemy._state])
+	_teardown_world(world)
+
+
+# ---------------------------------------------------------------------------
+# AC-09 — Enemy reaches player cell → enemy_reached_player emitted
+# ---------------------------------------------------------------------------
+
+## Enemy at (0,3), player one step right at (1,3).  CHASE state, move_timer=0.
+## After one step the enemy lands on the player's cell.
+## Expected: enemy_reached_player signal fires.
+func _test_ac09_reached_player() -> void:
+	var world := _make_world()
+	var enemy: EnemyController = world["enemy"]
+	enemy.spawn(Vector2i(0, 3), Vector2i(0, 0))
+	# Player one step to the right.
+	enemy._player_cell = Vector2i(1, 3)
+	enemy._state = EnemyController.State.CHASE
+
+	var reached := false
+	enemy.enemy_reached_player.connect(func(_id: int, _cell: Vector2i) -> void:
+		reached = true
+	)
+	enemy._move_timer = 0.0
+	enemy._process(0.0)
+	if reached:
+		print("[PASS] AC-09: enemy_reached_player emitted on cell collision")
+	else:
+		print("[FAIL] AC-09: enemy_reached_player not emitted")
+	_teardown_world(world)
+
+
+# ---------------------------------------------------------------------------
+# AC-10 — Enemy in CHASE on LADDER can move vertically toward player
+# ---------------------------------------------------------------------------
+
+## Grid: col 1 = LADDER (rows 0-3), SOLID floor at row 4.
+## Enemy at (1,3), player at (1,0) — directly above on the same LADDER column.
+## CHASE state manually injected (LADDER blocks LOS → auto-transition won't fire).
+## Expected: enemy_moved fires with to=(1,2) — one step upward on the LADDER.
+##
+## Known limitation: _is_player_detectable() checks LOS and LADDER tiles are
+## SOLID, so this test will print [FAIL] until the CHASE re-evaluation is
+## changed to range-only (design follow-up required — see AI-03 notes).
+func _test_ac10_chase_ladder_vertical() -> void:
+	var world := _make_world(_LADDER_DATA)
+	var enemy: EnemyController = world["enemy"]
+	enemy.spawn(Vector2i(1, 3), Vector2i(1, 0))
+	enemy._player_cell = Vector2i(1, 0)  # directly above on LADDER
+	enemy._state = EnemyController.State.CHASE
+
+	var moved_to: Vector2i = Vector2i(-1, -1)
+	enemy.enemy_moved.connect(func(_id: int, _from: Vector2i, to: Vector2i) -> void:
+		moved_to = to
+	)
+	enemy._move_timer = 0.0
+	enemy._process(0.0)
+
+	if moved_to == Vector2i(1, 2):  # one step up on LADDER
+		print("[PASS] AC-10: CHASE moves vertically on LADDER toward player")
+	else:
+		print("[FAIL] AC-10: expected (1,2) got %s" % moved_to)
+	_teardown_world(world)
+
+
+# ---------------------------------------------------------------------------
+# AC-12 — _on_player_moved updates _player_cell
+# ---------------------------------------------------------------------------
+
+## Directly call _on_player_moved and verify _player_cell is updated.
+## Synchronous — no _process tick required.
+func _test_ac12_player_cell_update() -> void:
+	var world := _make_world()
+	var enemy: EnemyController = world["enemy"]
+	enemy.spawn(Vector2i(0, 3), Vector2i(0, 0))
+	enemy._on_player_moved(Vector2i(2, 3), Vector2i(5, 3))
+	if enemy._player_cell == Vector2i(5, 3):
+		print("[PASS] AC-12: _player_cell updated on player_moved")
+	else:
+		print("[FAIL] AC-12: expected (5,3) got %s" % enemy._player_cell)
 	_teardown_world(world)

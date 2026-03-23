@@ -36,7 +36,7 @@ const _FALL_SPEED: float = 0.1
 # ---------------------------------------------------------------------------
 
 ## AI state machine.
-## CHASE is a stub in AI-02; full implementation deferred to AI-03.
+## CHASE full implementation: AI-03 (LOS detection + greedy pathfinding).
 enum State { PATROL, CHASE, FALLING, TRAPPED, DEAD }
 
 # ---------------------------------------------------------------------------
@@ -136,7 +136,7 @@ func _process(delta: float) -> void:
 		State.PATROL:
 			_process_patrol(delta)
 		State.CHASE:
-			_process_patrol(delta)   # stub — AI-03 replaces with CHASE logic
+			_process_chase(delta)
 		State.FALLING:
 			_process_falling(delta)
 		State.TRAPPED:
@@ -210,6 +210,10 @@ func reset() -> void:
 ## delegated to _gravity.is_grounded(next_col, next_row), which already
 ## encapsulates the climbable exception and the implicit bottom-row floor.
 func _process_patrol(delta: float) -> void:
+	# PATROL → CHASE transition: if player is detectable, switch immediately.
+	if _is_player_detectable():
+		_state = State.CHASE
+		return
 	_move_timer -= delta
 	if _move_timer > 0.0:
 		return
@@ -233,6 +237,40 @@ func _process_patrol(delta: float) -> void:
 		enemy_moved.emit(enemy_id, old_cell, current_cell)
 	else:
 		_patrol_dir = -_patrol_dir
+
+
+## Advance one chase step toward the player.
+##
+## Uses greedy Manhattan-distance reduction.  If no valid neighbor reduces the
+## distance (deadlock), the enemy stays put but re-evaluates detection every
+## frame — allowing it to resume PATROL if the player leaves range (S3-R02).
+func _process_chase(delta: float) -> void:
+	# Re-evaluate: player may have left detection range since last frame.
+	if not _is_player_detectable():
+		_state = State.PATROL
+		return
+
+	_move_timer -= delta
+	if _move_timer > 0.0:
+		return
+	_move_timer = 1.0 / config.move_speed
+
+	var next: Vector2i = _get_chase_next_cell()
+
+	if next != current_cell:
+		var old_cell: Vector2i = current_cell
+		current_cell = next
+		position = _grid.grid_to_world(current_cell.x, current_cell.y)
+		_gravity.update_entity_position(enemy_id, current_cell.x, current_cell.y)
+		enemy_moved.emit(enemy_id, old_cell, current_cell)
+
+		# Collision detection: enemy reached player's cell.
+		if current_cell == _player_cell:
+			enemy_reached_player.emit(enemy_id, current_cell)
+
+	# Re-evaluate after move (or after staying put).
+	if not _is_player_detectable():
+		_state = State.PATROL
 
 
 ## Advance one fall step downward.  Called every frame while in FALLING.
@@ -309,6 +347,91 @@ func _trigger_respawn() -> void:
 	_respawn_timer = config.respawn_delay
 
 # ---------------------------------------------------------------------------
+# Private methods — CHASE helpers
+# ---------------------------------------------------------------------------
+
+## Return the best neighbor cell to step into when chasing the player.
+##
+## Candidates are ordered horizontal-first (tie-break per GDD).  If no
+## candidate reduces Manhattan distance, returns current_cell (deadlock
+## fallback — S3-R02).
+func _get_chase_next_cell() -> Vector2i:
+	var best: Vector2i = current_cell
+	var best_dist: int = _manhattan(current_cell, _player_cell)
+
+	# Horizontal candidates first (tie-break: prefer horizontal per GDD).
+	var candidates: Array[Vector2i] = [
+		Vector2i(current_cell.x + 1, current_cell.y),
+		Vector2i(current_cell.x - 1, current_cell.y),
+		Vector2i(current_cell.x, current_cell.y - 1),  # up
+		Vector2i(current_cell.x, current_cell.y + 1),  # down
+	]
+
+	for candidate in candidates:
+		if not _can_enter_cell(candidate):
+			continue
+		var d: int = _manhattan(candidate, _player_cell)
+		if d < best_dist:
+			best_dist = d
+			best = candidate
+
+	return best
+
+
+## Return true if the enemy can legally step into `cell`.
+##
+## Horizontal moves require is_grounded (encapsulates climbable + floor).
+## Vertical moves (LADDER / ROPE traversal) require the current or target
+## cell to be climbable.
+func _can_enter_cell(cell: Vector2i) -> bool:
+	if not _grid.is_valid(cell.x, cell.y):
+		return false
+	if not _terrain.is_traversable(cell.x, cell.y):
+		return false
+
+	var is_vertical: bool = (cell.x == current_cell.x)
+	if is_vertical:
+		return _terrain.is_climbable(current_cell.x, current_cell.y) \
+			or _terrain.is_climbable(cell.x, cell.y)
+	else:
+		return _gravity.is_grounded(cell.x, cell.y)
+
+
+## Return true if the player is within detection_range and on a clear
+## orthogonal line of sight.
+func _is_player_detectable() -> bool:
+	if _manhattan(current_cell, _player_cell) > config.detection_range:
+		return false
+	return _has_line_of_sight(current_cell, _player_cell)
+
+
+## Return true if there are no SOLID tiles between `from` and `to` on the
+## same row or column.  Diagonal lines of sight are not supported (GDD OQ-03).
+##
+## Note: LADDER tiles are SOLID per TerrainSystem, so they block line of sight.
+func _has_line_of_sight(from: Vector2i, to: Vector2i) -> bool:
+	if from.y == to.y:
+		var min_col: int = mini(from.x, to.x)
+		var max_col: int = maxi(from.x, to.x)
+		for col: int in range(min_col + 1, max_col):
+			if _terrain.is_solid(col, from.y):
+				return false
+		return true
+	if from.x == to.x:
+		var min_row: int = mini(from.y, to.y)
+		var max_row: int = maxi(from.y, to.y)
+		for row: int in range(min_row + 1, max_row):
+			if _terrain.is_solid(from.x, row):
+				return false
+		return true
+	return false  # different row and column — no diagonal LOS
+
+
+## Manhattan distance between two grid cells.
+func _manhattan(a: Vector2i, b: Vector2i) -> int:
+	return abs(a.x - b.x) + abs(a.y - b.y)
+
+# ---------------------------------------------------------------------------
 # Signal callbacks
 # ---------------------------------------------------------------------------
 
@@ -341,8 +464,8 @@ func _on_entity_should_fall(entity_id: int) -> void:
 ## Connected to GridGravity.entity_landed in setup().
 ##
 ## Checks whether the landing cell is an OPEN (dug) hole.  If so the enemy
-## becomes TRAPPED; otherwise it resumes PATROL.
-## AI-03 will add a CHASE re-evaluation here instead of plain PATROL.
+## becomes TRAPPED; otherwise it resumes PATROL and re-evaluates CHASE if
+## the player is still detectable (AI-03).
 ##
 ## Note: signal carries only entity_id — position is read from current_cell,
 ## which has already been updated by _process_falling steps.
@@ -358,6 +481,9 @@ func _on_entity_landed(entity_id: int) -> void:
 		enemy_trapped.emit(enemy_id, current_cell)
 	else:
 		_state = State.PATROL
+		# Re-evaluate CHASE after landing.
+		if _is_player_detectable():
+			_state = State.CHASE
 
 
 ## Connected to PlayerMovement.player_moved in setup().
