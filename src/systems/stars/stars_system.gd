@@ -78,11 +78,8 @@ func get_time_elapsed() -> float:
 # Signal handlers
 # ---------------------------------------------------------------------------
 
-func _on_level_started(level_index: int) -> void:
-	# Derive level_id from the index via LevelSystem's current data.
-	# LevelSystem exposes current_level_index; we reconstruct the id string
-	# to avoid requiring a direct reference to LevelData.
-	_ = level_index  # suppress unused-param warning
+func _on_level_started(_level_index: int) -> void:
+	# Derive level_id from LevelSystem.current_level_index (set before this signal).
 	_current_level_id = _resolve_level_id()
 	_start_ms = Time.get_ticks_msec()
 

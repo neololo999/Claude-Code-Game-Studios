@@ -6,7 +6,7 @@
 ##
 ## Implements: design/gdd/stars-scoring.md
 class_name StarsConfig
-extends Object
+extends RefCounted
 
 ## Par time in seconds per level_id.
 ## 3 stars ≤ par, 2 stars ≤ par × 1.5, 1 star = any completion.
