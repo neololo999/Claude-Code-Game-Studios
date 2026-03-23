@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="InputConfig" load_steps=2 format=3 uid="uid://bx7q3n4m8ckv2"]
+
+[ext_resource type="Script" path="res://src/systems/input/input_config.gd" id="1_a3k7p"]
+
+[resource]
+script = ExtResource("1_a3k7p")
+move_speed = 5.0
+gamepad_deadzone = 0.5
