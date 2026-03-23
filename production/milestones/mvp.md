@@ -1,7 +1,8 @@
 # Milestone: MVP — First Playable Prototype
 
-> **Status**: In Progress — Sprint 4 complete ✅ / Sprint 5 in progress
+> **Status**: ✅ CLOSED — All 5 sprints complete · Tag: `v0.1.0-mvp`
 > **Target Date**: 2026-05-31
+> **Closed Date**: 2026-05-31
 > **Created**: 2026-03-23
 > **Owner**: Producer
 > **Tier**: MVP (per `design/gdd/systems-index.md`)
@@ -26,29 +27,29 @@ is fun and that every system works together.
 The MVP is **done** when ALL of the following are true:
 
 ### Functional
-- [ ] A player can launch the game and immediately start playing Level 1
-- [ ] The player can move left, right, climb LADDER, traverse ROPE
-- [ ] The player falls under discrete gravity when unsupported
-- [ ] The player can dig left and dig right; holes open and close on timer
-- [ ] Guards patrol and chase the player using grid-based pathfinding
-- [ ] Guards fall into open holes and are trapped for the hole's open duration
-- [ ] Collecting all treasures in a level triggers the exit to open
-- [ ] Reaching the open exit advances to the next level
-- [ ] A guard reaching the player triggers death and instant level restart
-- [ ] Falling into a closed hole triggers death and instant level restart
-- [ ] All 10 levels complete without crashes or softlocks
-- [ ] Level progression works: completing Level 10 shows a "YOU WIN" screen (placeholder)
+- [x] A player can launch the game and immediately start playing Level 1
+- [x] The player can move left, right, climb LADDER, traverse ROPE
+- [x] The player falls under discrete gravity when unsupported
+- [x] The player can dig left and dig right; holes open and close on timer
+- [x] Guards patrol and chase the player using grid-based pathfinding
+- [x] Guards fall into open holes and are trapped for the hole's open duration
+- [x] Collecting all treasures in a level triggers the exit to open
+- [x] Reaching the open exit advances to the next level
+- [x] A guard reaching the player triggers death and instant level restart
+- [x] Falling into a closed hole triggers death and instant level restart
+- [x] All 10 levels complete without crashes or softlocks
+- [x] Level progression works: completing Level 10 shows a "YOU WIN" screen (placeholder)
 
 ### Stability
-- [ ] Zero crashes across a full playthrough of all 10 levels
-- [ ] No GDScript runtime errors (`push_error`) during normal gameplay
-- [ ] Level restart completes in < 500 ms (no perceptible freeze)
-- [ ] All dig timers reset correctly on restart (no state leaking between attempts)
+- [x] Zero crashes across a full playthrough of all 10 levels
+- [x] No GDScript runtime errors (`push_error`) during normal gameplay
+- [x] Level restart completes in < 500 ms (no perceptible freeze)
+- [x] All dig timers reset correctly on restart (no state leaking between attempts)
 
 ### Content
-- [ ] 10 levels are designed, implemented as `LevelData` Resources, and playable
-- [ ] Each level is completable (verified by the designer completing it)
-- [ ] Levels introduce mechanics progressively (Level 1 = tutorial-simple, Level 10 = multi-guard puzzle)
+- [x] 10 levels are designed, implemented as `LevelData` Resources, and playable
+- [x] Each level is completable (verified by the designer completing it)
+- [x] Levels introduce mechanics progressively (Level 1 = tutorial-simple, Level 10 = multi-guard puzzle)
 
 ---
 
@@ -65,7 +66,7 @@ The MVP is **done** when ALL of the following are true:
 | 7 | **Pickup System** | `pickup-system.md` | S (1d) | Sprint 2 | ✅ Done (Sprint 2) |
 | 8 | **Enemy AI** | `enemy-ai.md` | L (4d+) | Sprint 3–4 | ✅ Done (Sprint 3) |
 | 9 | **Level System** | `level-system.md` | M (2.5d) | Sprint 4 | ✅ Done (Sprint 4) |
-| — | **10 Playable Levels** | — | S (1.5d) | Sprint 4–5 | 🟡 In Progress (Sprint 5) (levels 1–5 done) |
+| — | **10 Playable Levels** | — | S (1.5d) | Sprint 4–5 | ✅ Done (Sprint 5) |
 
 > Input System is complete and excluded from remaining capacity calculations.
 
@@ -112,7 +113,7 @@ The MVP is **done** when ALL of the following are true:
 | **Sprint 2** | 2026-04-06 → 2026-04-19 | Dig System + Pickup System + integration smoke-test scene ✅ **Delivered (all Must Have)** |
 | **Sprint 3** | 2026-04-20 → 2026-05-03 | Enemy AI (core patrol + fall-into-hole + chase + TRAPPED/DEAD + integration) ✅ **Delivered (all Must Have + all stretch — 120% velocity)** |
 | **Sprint 4** | 2026-05-04 → 2026-05-17 | Level System + Levels 1–5 ✅ **Delivered (all Must Have — 100% velocity)** |
-| **Sprint 5** | 2026-05-18 → 2026-05-31 | Levels 6–10 + integration pass + bug fixes + MVP sign-off *(in progress)* |
+| **Sprint 5** | 2026-05-18 → 2026-05-31 | Levels 6–10 + integration pass + bug fixes + MVP sign-off ✅ **Delivered (all Must Have + should have — 100% velocity)** |
 
 > Capacity: 5 effective days/sprint (6 days − 20% buffer), solo developer at 3 days/week.
 
@@ -189,4 +190,4 @@ Key additions for Vertical Slice:
 
 ---
 
-*Document owner: Producer | Last updated: 2026-05-18*
+*Document owner: Producer | Last updated: 2026-05-31 | Milestone CLOSED — v0.1.0-mvp*
