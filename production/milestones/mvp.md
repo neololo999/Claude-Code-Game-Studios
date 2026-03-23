@@ -1,6 +1,6 @@
 # Milestone: MVP — First Playable Prototype
 
-> **Status**: In Progress — Sprint 1 complete ✅ / Sprint 2 in planning
+> **Status**: In Progress — Sprint 2 complete ✅ / Sprint 3 in progress
 > **Target Date**: 2026-05-31
 > **Created**: 2026-03-23
 > **Owner**: Producer
@@ -61,9 +61,9 @@ The MVP is **done** when ALL of the following are true:
 | 3 | **Input System** | `input-system.md` | S (done) | Sprint 0 | ✅ Done (Sprint 0) |
 | 4 | **Grid Gravity** | `grid-gravity.md` | S (1d) | Sprint 1 | ✅ Done (Sprint 1) |
 | 5 | **Player Movement** | `player-movement.md` | M (2.5d) | Sprint 1–2 | ✅ Done (Sprint 1) |
-| 6 | **Dig System** | `dig-system.md` | M (2.5d) | Sprint 2 | 🟡 In Progress (Sprint 2) |
-| 7 | **Pickup System** | `pickup-system.md` | S (1d) | Sprint 2 | 🟡 In Progress (Sprint 2) |
-| 8 | **Enemy AI** | `enemy-ai.md` | L (4d+) | Sprint 3–4 | 🔴 Not Started |
+| 6 | **Dig System** | `dig-system.md` | M (2.5d) | Sprint 2 | ✅ Done (Sprint 2) |
+| 7 | **Pickup System** | `pickup-system.md` | S (1d) | Sprint 2 | ✅ Done (Sprint 2) |
+| 8 | **Enemy AI** | `enemy-ai.md` | L (4d+) | Sprint 3–4 | 🟡 In Progress (Sprint 3) |
 | 9 | **Level System** | `level-system.md` | M (2.5d) | Sprint 4 | 🔴 Not Started |
 | — | **10 Playable Levels** | — | S (1.5d) | Sprint 4–5 | 🔴 Not Started |
 
@@ -109,8 +109,8 @@ The MVP is **done** when ALL of the following are true:
 | Sprint | Dates | Deliverable |
 |--------|-------|-------------|
 | **Sprint 1** | 2026-03-23 → 2026-04-05 | Godot project + Grid + Terrain + Grid Gravity + Player Movement ✅ **Delivered (all Must Have + stretch)** |
-| **Sprint 2** | 2026-04-06 → 2026-04-19 | Dig System + Pickup System + integration smoke-test scene *(in planning)* |
-| **Sprint 3** | 2026-04-20 → 2026-05-03 | Enemy AI (core patrol + fall-into-hole) |
+| **Sprint 2** | 2026-04-06 → 2026-04-19 | Dig System + Pickup System + integration smoke-test scene ✅ **Delivered (all Must Have)** |
+| **Sprint 3** | 2026-04-20 → 2026-05-03 | Enemy AI (core patrol + fall-into-hole) *(in progress)* |
 | **Sprint 4** | 2026-05-04 → 2026-05-17 | Enemy AI (chase complete) + Level System + Levels 1–5 |
 | **Sprint 5** | 2026-05-18 → 2026-05-31 | Levels 6–10 + integration pass + bug fixes + MVP sign-off |
 
@@ -189,4 +189,4 @@ Key additions for Vertical Slice:
 
 ---
 
-*Document owner: Producer | Last updated: 2026-04-06*
+*Document owner: Producer | Last updated: 2026-04-20*
