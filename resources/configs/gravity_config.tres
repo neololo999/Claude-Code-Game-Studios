@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="GravityConfig" load_steps=2 format=3 uid="uid://gv5r8n2k6cqw1"]
+
+[ext_resource type="Script" path="res://src/systems/gravity/gravity_config.gd" id="1_r9k4m"]
+
+[resource]
+script = ExtResource("1_r9k4m")
+fall_speed = 0.1
