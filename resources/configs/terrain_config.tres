@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TerrainConfig" load_steps=2 format=3 uid="uid://dt4r8n2k6bqw9"]
+
+[ext_resource type="Script" path="res://src/systems/terrain/terrain_config.gd" id="1_p7m3k"]
+
+[resource]
+script = ExtResource("1_p7m3k")
+dig_duration = 0.5
+dig_close_slow = 8.0
+dig_close_fast = 4.0
+closing_duration = 1.0
