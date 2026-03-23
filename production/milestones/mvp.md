@@ -1,6 +1,6 @@
 # Milestone: MVP — First Playable Prototype
 
-> **Status**: Not Started
+> **Status**: In Progress — Sprint 1 complete ✅ / Sprint 2 in planning
 > **Target Date**: 2026-05-31
 > **Created**: 2026-03-23
 > **Owner**: Producer
@@ -56,13 +56,13 @@ The MVP is **done** when ALL of the following are true:
 
 | # | System | GDD | Effort | Sprint Target | Status |
 |---|---------|-----|--------|--------------|--------|
-| 1 | **Grid System** | `grid-system.md` | S (1d) | Sprint 1 | 🔴 Not Started |
-| 2 | **Terrain System** | `terrain-system.md` | M (2.5d) | Sprint 1 | 🔴 Not Started |
-| 3 | **Input System** | `input-system.md` | S (done) | Sprint 0 | ✅ Done |
-| 4 | **Grid Gravity** | `grid-gravity.md` | S (1d) | Sprint 1 | 🔴 Not Started |
-| 5 | **Player Movement** | `player-movement.md` | M (2.5d) | Sprint 1–2 | 🔴 Not Started |
-| 6 | **Dig System** | `dig-system.md` | M (2.5d) | Sprint 2 | 🔴 Not Started |
-| 7 | **Pickup System** | `pickup-system.md` | S (1d) | Sprint 2–3 | 🔴 Not Started |
+| 1 | **Grid System** | `grid-system.md` | S (1d) | Sprint 1 | ✅ Done (Sprint 1) |
+| 2 | **Terrain System** | `terrain-system.md` | M (2.5d) | Sprint 1 | ✅ Done (Sprint 1) |
+| 3 | **Input System** | `input-system.md` | S (done) | Sprint 0 | ✅ Done (Sprint 0) |
+| 4 | **Grid Gravity** | `grid-gravity.md` | S (1d) | Sprint 1 | ✅ Done (Sprint 1) |
+| 5 | **Player Movement** | `player-movement.md` | M (2.5d) | Sprint 1–2 | ✅ Done (Sprint 1) |
+| 6 | **Dig System** | `dig-system.md` | M (2.5d) | Sprint 2 | 🟡 In Progress (Sprint 2) |
+| 7 | **Pickup System** | `pickup-system.md` | S (1d) | Sprint 2 | 🟡 In Progress (Sprint 2) |
 | 8 | **Enemy AI** | `enemy-ai.md` | L (4d+) | Sprint 3–4 | 🔴 Not Started |
 | 9 | **Level System** | `level-system.md` | M (2.5d) | Sprint 4 | 🔴 Not Started |
 | — | **10 Playable Levels** | — | S (1.5d) | Sprint 4–5 | 🔴 Not Started |
@@ -108,30 +108,31 @@ The MVP is **done** when ALL of the following are true:
 
 | Sprint | Dates | Deliverable |
 |--------|-------|-------------|
-| **Sprint 1** | 2026-03-23 → 2026-04-05 | Godot project + Grid + Terrain + Grid Gravity *(+ Player Movement stretch)* |
-| **Sprint 2** | 2026-04-06 → 2026-04-19 | Player Movement (complete) + Dig System |
-| **Sprint 3** | 2026-04-20 → 2026-05-03 | Pickup System + Enemy AI (core patrol + fall) |
+| **Sprint 1** | 2026-03-23 → 2026-04-05 | Godot project + Grid + Terrain + Grid Gravity + Player Movement ✅ **Delivered (all Must Have + stretch)** |
+| **Sprint 2** | 2026-04-06 → 2026-04-19 | Dig System + Pickup System + integration smoke-test scene *(in planning)* |
+| **Sprint 3** | 2026-04-20 → 2026-05-03 | Enemy AI (core patrol + fall-into-hole) |
 | **Sprint 4** | 2026-05-04 → 2026-05-17 | Enemy AI (chase complete) + Level System + Levels 1–5 |
 | **Sprint 5** | 2026-05-18 → 2026-05-31 | Levels 6–10 + integration pass + bug fixes + MVP sign-off |
 
 > Capacity: 5 effective days/sprint (6 days − 20% buffer), solo developer at 3 days/week.
 
-**Total remaining effort (after Sprint 1 Must Have):**
+**Total remaining effort (after Sprint 1 — all systems delivered including Player Movement):**
 
 | System | Effort | Days |
 |--------|--------|------|
-| Player Movement (if not done S1) | M | 2.5 |
 | Dig System | M | 2.5 |
 | Pickup System | S | 1.0 |
 | Enemy AI | L | 4.5 |
 | Level System | M | 2.5 |
 | 10 Levels | S | 1.5 |
 | Integration + bug fix buffer | — | 2.5 |
-| **Total** | | **~17 days** |
+| **Total** | | **~14.5 days** |
 
-> 17 days / 5 effective days per sprint ≈ **3.4 sprints** remaining after Sprint 1.
-> With 4 remaining sprints (Sprint 2–5), there is a ~0.6-sprint contingency buffer.
-> **This schedule is achievable but has no slack for scope creep.**
+> 14.5 days / 5 effective days per sprint ≈ **2.9 sprints** remaining after Sprint 2.
+> With 3 remaining sprints (Sprint 3–5), there is a ~0.1-sprint contingency buffer.
+> Sprint 1 delivering Player Movement as a stretch goal recovered 2.5 days of schedule,
+> allowing Sprint 2 to ship Pickup System alongside Dig System.
+> **The schedule remains tight; no slack for scope creep.**
 
 ---
 
@@ -188,4 +189,4 @@ Key additions for Vertical Slice:
 
 ---
 
-*Document owner: Producer | Last updated: 2026-03-23*
+*Document owner: Producer | Last updated: 2026-04-06*
