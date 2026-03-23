@@ -108,4 +108,4 @@ func _on_level_started(_index: int) -> void:
 
 func _update_treasure_label() -> void:
 	if _treasure_label:
-		_treasure_label.text = "💎 %d / %d" % [_collected, _total_pickups]
+		_treasure_label.text = "%d / %d collected" % [_collected, _total_pickups]

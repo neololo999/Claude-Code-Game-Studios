@@ -98,6 +98,9 @@ signal game_completed
 @export var audio: AudioSystem
 @export var vfx: VfxSystem
 
+## Sprint 8: Stars/Scoring — null-safe; game runs correctly without it.
+@export var stars: StarsSystem
+
 # ---------------------------------------------------------------------------
 # Public read-only state
 # ---------------------------------------------------------------------------
@@ -292,6 +295,9 @@ func _initialize_level(data: LevelData) -> void:
 	if vfx != null and not vfx.get_meta("_vfx_setup_done", false):
 		vfx.setup(camera, pickups, self, grid)
 		vfx.set_meta("_vfx_setup_done", true)
+	if stars != null and not stars.get_meta("_stars_setup_done", false):
+		stars.setup(self)
+		stars.set_meta("_stars_setup_done", true)
 
 
 ## Dynamically create one EnemyController child node per enemy_spawn entry.
