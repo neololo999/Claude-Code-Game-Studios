@@ -1,0 +1,44 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://src/gameplay/level/level_system.gd" id="1_lvlsys"]
+[ext_resource type="Script" path="res://src/systems/grid/grid_system.gd" id="2_grdsys"]
+[ext_resource type="Script" path="res://src/systems/terrain/terrain_system.gd" id="3_trnsys"]
+[ext_resource type="Script" path="res://src/systems/gravity/grid_gravity.gd" id="4_grvty"]
+[ext_resource type="Script" path="res://src/gameplay/player/player_movement.gd" id="5_plrmv"]
+[ext_resource type="Script" path="res://src/gameplay/pickups/pickup_system.gd" id="6_pckup"]
+[ext_resource type="Script" path="res://src/systems/input/input_system.gd" id="7_input"]
+[ext_resource type="Resource" uid="uid://dt4r8n2k6bqw9" path="res://resources/configs/terrain_config.tres" id="8_tcfg"]
+[ext_resource type="Resource" uid="uid://gv5r8n2k6cqw1" path="res://resources/configs/gravity_config.tres" id="9_gcfg"]
+[ext_resource type="Resource" uid="uid://bx7q3n4m8ckv2" path="res://resources/configs/input_config.tres" id="10_icfg"]
+[ext_resource type="Resource" path="res://resources/configs/enemy_config.tres" id="11_ecres"]
+
+[node name="Level01" type="Node"]
+script = ExtResource("1_lvlsys")
+grid = NodePath("GridSystem")
+terrain = NodePath("TerrainSystem")
+gravity = NodePath("GridGravity")
+player = NodePath("PlayerMovement")
+pickups = NodePath("PickupSystem")
+input_node = NodePath("InputSystem")
+terrain_config = ExtResource("8_tcfg")
+gravity_config = ExtResource("9_gcfg")
+input_config = ExtResource("10_icfg")
+enemy_config = ExtResource("11_ecres")
+
+[node name="GridSystem" type="Node" parent="."]
+script = ExtResource("2_grdsys")
+
+[node name="TerrainSystem" type="Node" parent="."]
+script = ExtResource("3_trnsys")
+
+[node name="GridGravity" type="Node" parent="."]
+script = ExtResource("4_grvty")
+
+[node name="PlayerMovement" type="Node2D" parent="."]
+script = ExtResource("5_plrmv")
+
+[node name="PickupSystem" type="Node" parent="."]
+script = ExtResource("6_pckup")
+
+[node name="InputSystem" type="Node" parent="."]
+script = ExtResource("7_input")

@@ -111,6 +111,8 @@ var _is_initialized: bool = false
 
 func _ready() -> void:
 	set_process(false)
+	# Auto-start level_001 when the scene is run directly.
+	call_deferred("load_level", "level_001")
 
 
 ## Handle timed state transitions for DYING and VICTORY.
