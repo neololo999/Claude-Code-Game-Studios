@@ -57,6 +57,11 @@ const LEVEL_IDS: Array[String] = [
 	"level_003",
 	"level_004",
 	"level_005",
+	"level_006",
+	"level_007",
+	"level_008",
+	"level_009",
+	"level_010",
 ]
 
 # ---------------------------------------------------------------------------
@@ -72,6 +77,11 @@ static func build(level_id: String) -> LevelData:
 		"level_003": return _level_003()
 		"level_004": return _level_004()
 		"level_005": return _level_005()
+		"level_006": return _level_006()
+		"level_007": return _level_007()
+		"level_008": return _level_008()
+		"level_009": return _level_009()
+		"level_010": return _level_010()
 		_:
 			return null
 
@@ -421,6 +431,419 @@ static func _level_005() -> LevelData:
 	]
 	data.pickup_cells = pickups_005
 	data.exit_cell = Vector2i(12, 5)
+
+	return data
+
+# ---------------------------------------------------------------------------
+# Level 006 — "The Descent"
+# ---------------------------------------------------------------------------
+## 14 × 8 · 2 guards · 5 pickups · mechanics: DIRT_SLOW multi-level dig strategy
+##
+## Two DIRT_SLOW platform bands (R2, R4) create a layered descent puzzle.
+## A central LADDER column at col 7 threads through both platform rows,
+## connecting the three walk rows.  Guard 1 patrols the upper walk row (far
+## right); Guard 2 patrols the mid walk row (centre-left).  Player must dig
+## through R2 DIRT to reach the mid row, collect the pickup there, then use
+## the col-7 ladder to descend to the lower row where three more pickups and
+## the exit wait.  Flanking ladders at col 2 and col 11 give return routes.
+##
+## Grid (14 cols, 0–13):
+##
+##   R0  ##############   ceiling
+##   R1  #............#   [player@1,1]  [guard1@12,1]
+##   R2  ##DDDD###DDD##   platform — DIRT_SLOW@2,3,4,5; DIRT_SLOW@9,10,11
+##   R3  #......L.....#   walk row  — LADDER@7  [guard2@6,3]
+##   R4  ##DDD##L##DDD#   platform — DIRT_SLOW@2,3,4; LADDER@7; DIRT_SLOW@10,11,12
+##   R5  #.L........L.#   walk row  — LADDER@2; LADDER@11
+##   R6  ##L########L##   platform — LADDER@2; LADDER@11
+##   R7  ##############   floor
+##
+## Reachability path:
+##   (1,1) →walk right→ (3,1) pickup; (10,1) pickup [guard1@12,1 nearby]
+##   (3,1) →dig (4,2)→ fall to (4,3) →walk right→ (4,3) pickup
+##   (4,3) →walk right→ (7,3) L@7 →descend→ (7,5) in R5
+##   (7,5) →walk left→ (2,5) pickup; →walk right→ (9,5) pickup → (12,5) exit
+##
+## Design note: guard2@(6,3) is bypassed by digging a pit in R4 at col 4
+## (DIRT_SLOW) while standing at (5,3), trapping the guard before passing.
+static func _level_006() -> LevelData:
+	var data := LevelData.new()
+	data.level_id = "level_006"
+	data.level_index = 6
+	data.level_name = "The Descent"
+	data.grid_cols = 14
+	data.grid_rows = 8
+
+	var rows: Array[String] = [
+		"##############",  # R0 — ceiling
+		"#............#",  # R1 — upper walk row
+		"##DDDD###DDD##",  # R2 — upper platform; DIRT_SLOW@2,3,4,5; DIRT_SLOW@9,10,11
+		"#......L.....#",  # R3 — mid walk row; LADDER@7
+		"##DDD##L##DDD#",  # R4 — mid platform; DIRT_SLOW@2,3,4; LADDER@7; DIRT_SLOW@10,11,12
+		"#.L........L.#",  # R5 — lower walk row; LADDER@2; LADDER@11
+		"##L########L##",  # R6 — lower platform; LADDER@2; LADDER@11
+		"##############",  # R7 — floor
+	]
+	data.terrain_map = _map_from_ascii(rows, 14)
+
+	data.player_spawn = Vector2i(1, 1)
+
+	var spawns_006: Array[Vector2i] = [Vector2i(12, 1), Vector2i(6, 3)]
+	data.enemy_spawns = spawns_006
+
+	var rescate_006: Array[Vector2i] = [Vector2i(12, 0), Vector2i(6, 0)]
+	data.enemy_rescate_positions = rescate_006
+
+	# (3,1):  upper walk row — walks right from player spawn
+	# (10,1): upper walk row — near guard1; collected before guard closes in
+	# (4,3):  mid walk row   — reached by digging R2 DIRT and falling
+	# (2,5):  lower walk row — LADDER tile; collected while descending/traversing
+	# (9,5):  lower walk row — walked to after using L@7 to reach R5
+	var pickups_006: Array[Vector2i] = [
+		Vector2i(3, 1),
+		Vector2i(10, 1),
+		Vector2i(4, 3),
+		Vector2i(2, 5),
+		Vector2i(9, 5),
+	]
+	data.pickup_cells = pickups_006
+	data.exit_cell = Vector2i(12, 5)
+
+	return data
+
+# ---------------------------------------------------------------------------
+# Level 007 — "Fast or Die"
+# ---------------------------------------------------------------------------
+## 14 × 8 · 3 guards · 5 pickups · mechanics: DIRT_FAST throughout — timing
+##
+## Every platform is DIRT_FAST — holes open instantly and close fast.  Three
+## guards cover all three walk rows.  Player must exploit the brief window
+## that each dug hole provides: trap guards by digging under them, then sprint
+## through before the ground closes.  The wide grid and three active guards
+## mean standing still is death.
+##
+## Grid (14 cols, 0–13):
+##
+##   R0  ##############   ceiling
+##   R1  #............#   [player@1,1]  [guard1@12,1]
+##   R2  ##FFFF###FFFF#   platform — DIRT_FAST@2,3,4,5; DIRT_FAST@9,10,11,12
+##   R3  #......L.....#   walk row  — LADDER@7  [guard2@6,3]
+##   R4  ##FFF##L##FFF#   platform — DIRT_FAST@2,3,4; LADDER@7; DIRT_FAST@10,11,12
+##   R5  #.L........L.#   walk row  — LADDER@2; LADDER@11  [guard3@8,5]
+##   R6  ##L########L##   platform — LADDER@2; LADDER@11
+##   R7  ##############   floor
+##
+## Reachability path:
+##   (1,1) →walk right→ (3,1) pickup; (10,1) pickup [guard1@12,1 — dig (12,2)!]
+##   (3,1) →dig (4,2) DIRT_FAST→ fall to (4,3); →walk left→ (3,3) pickup
+##   (3,3) →walk right→ (7,3) L@7 →descend through R4→ (7,5) in R5
+##   (7,5) →walk left→ (6,5) pickup; →walk right→ (10,5) pickup → (12,5) exit
+##   [guard3@8,5 — dig (7,6) or (9,6) SOLID... use timing to sprint past]
+static func _level_007() -> LevelData:
+	var data := LevelData.new()
+	data.level_id = "level_007"
+	data.level_index = 7
+	data.level_name = "Fast or Die"
+	data.grid_cols = 14
+	data.grid_rows = 8
+
+	var rows: Array[String] = [
+		"##############",  # R0 — ceiling
+		"#............#",  # R1 — upper walk row
+		"##FFFF###FFFF#",  # R2 — upper platform; DIRT_FAST@2,3,4,5; DIRT_FAST@9,10,11,12
+		"#......L.....#",  # R3 — mid walk row; LADDER@7
+		"##FFF##L##FFF#",  # R4 — mid platform; DIRT_FAST@2,3,4; LADDER@7; DIRT_FAST@10,11,12
+		"#.L........L.#",  # R5 — lower walk row; LADDER@2; LADDER@11
+		"##L########L##",  # R6 — lower platform; LADDER@2; LADDER@11
+		"##############",  # R7 — floor
+	]
+	data.terrain_map = _map_from_ascii(rows, 14)
+
+	data.player_spawn = Vector2i(1, 1)
+
+	var spawns_007: Array[Vector2i] = [Vector2i(12, 1), Vector2i(6, 3), Vector2i(8, 5)]
+	data.enemy_spawns = spawns_007
+
+	var rescate_007: Array[Vector2i] = [Vector2i(12, 0), Vector2i(6, 0), Vector2i(8, 0)]
+	data.enemy_rescate_positions = rescate_007
+
+	# (3,1):  upper walk row — walks right from spawn
+	# (10,1): upper walk row — guard1@12,1 is right next door; dig (12,2) first!
+	# (3,3):  mid walk row   — reached after digging R2 and falling to R3
+	# (6,5):  lower walk row — left of guard3@8,5; sprint timing required
+	# (10,5): lower walk row — right of guard3@8,5; sprint timing required
+	var pickups_007: Array[Vector2i] = [
+		Vector2i(3, 1),
+		Vector2i(10, 1),
+		Vector2i(3, 3),
+		Vector2i(6, 5),
+		Vector2i(10, 5),
+	]
+	data.pickup_cells = pickups_007
+	data.exit_cell = Vector2i(12, 5)
+
+	return data
+
+# ---------------------------------------------------------------------------
+# Level 008 — "The Rope Bridge"
+# ---------------------------------------------------------------------------
+## 14 × 8 · 2 guards · 6 pickups · mechanics: ROPE traversal central
+##
+## A central ROPE segment (cols 4–10) in the mid walk row is the only way to
+## reach the three rope pickups and cross to the right side of the level.
+## Flanking LADDER columns at col 2 and col 11 connect all three walk rows.
+## Guard 1 patrols the right end of the mid walk row; Guard 2 starts in the
+## lower walk row centre and must be outmanoeuvred while collecting the final
+## lower pickup.  DIRT_SLOW in R5 provides trapping opportunities.
+##
+## Grid (14 cols, 0–13):
+##
+##   R0  ##############   ceiling
+##   R1  #............#   [player@1,1]  ← exit@12,1
+##   R2  ##L########L##   platform — LADDER@2; LADDER@11
+##   R3  #.L.RRRRRRRL.#   walk row  — LADDER@2; ROPE@4,5,6,7,8,9,10; LADDER@11
+##                                      [guard1@12,3]
+##   R4  ##L########L##   platform — LADDER@2; LADDER@11
+##   R5  #.LDDD..DDDL.#   walk row  — LADDER@2; DIRT_SLOW@3,4,5;
+##                                      DIRT_SLOW@8,9,10; LADDER@11  [guard2@7,5]
+##   R6  ##L########L##   platform — LADDER@2; LADDER@11
+##   R7  ##############   floor
+##
+## Reachability path:
+##   (1,1) →walk right→ (3,1) pickup; (5,1) pickup
+##   (2,1) →L@2 down→ (2,2) →(2,3) on L; →step right→ ROPE@4
+##   →traverse rope→ (7,3),(8,3),(9,3) pickups
+##   (11,3) L; →L@11 down→ (11,5) in R5 → (11,5) LADDER: collect (11,5)
+##   wait! pickup is at (6,5); walk left from (11,5): →(6,5) pickup
+##   →(2,5) →L@2 up→ (2,3) →(2,2) →(2,1) →walk right→ (12,1) exit
+##
+## Design note (spec correction):
+##   Original spec placed guard2@(5,5) on DIRT_SLOW and pickup@(4,5) on
+##   DIRT_SLOW — both invalid for occupancy.  Guard2 moved to (7,5) '.' and
+##   pickup moved to (6,5) '.' to place them on traversable empty cells.
+##   Rescate updated from (5,0) to (7,0) accordingly.
+static func _level_008() -> LevelData:
+	var data := LevelData.new()
+	data.level_id = "level_008"
+	data.level_index = 8
+	data.level_name = "The Rope Bridge"
+	data.grid_cols = 14
+	data.grid_rows = 8
+
+	var rows: Array[String] = [
+		"##############",  # R0 — ceiling
+		"#............#",  # R1 — upper walk row; exit@(12,1)
+		"##L########L##",  # R2 — upper platform; LADDER@2; LADDER@11
+		"#.L.RRRRRRRL.#",  # R3 — mid walk row; LADDER@2; ROPE@4,5,6,7,8,9,10; LADDER@11
+		"##L########L##",  # R4 — mid platform; LADDER@2; LADDER@11
+		"#.LDDD..DDDL.#",  # R5 — lower walk row; LADDER@2; DIRT_SLOW@3,4,5; DIRT_SLOW@8,9,10; LADDER@11
+		"##L########L##",  # R6 — lower platform; LADDER@2; LADDER@11
+		"##############",  # R7 — floor
+	]
+	data.terrain_map = _map_from_ascii(rows, 14)
+
+	data.player_spawn = Vector2i(1, 1)
+
+	# guard2 corrected from (5,5) [DIRT tile] to (7,5) [EMPTY tile]
+	var spawns_008: Array[Vector2i] = [Vector2i(12, 3), Vector2i(7, 5)]
+	data.enemy_spawns = spawns_008
+
+	# rescate updated from (5,0) to (7,0) to match guard2 correction
+	var rescate_008: Array[Vector2i] = [Vector2i(12, 0), Vector2i(7, 0)]
+	data.enemy_rescate_positions = rescate_008
+
+	# (3,1) & (5,1): upper walk row — walked to from spawn
+	# (7,3),(8,3),(9,3): on ROPE in mid walk row — player hangs to collect
+	# (6,5): lower walk row — corrected from (4,5) which was on DIRT_SLOW;
+	#         guard2@(7,5) is one cell right; player approaches from left via L@2
+	var pickups_008: Array[Vector2i] = [
+		Vector2i(3, 1),
+		Vector2i(5, 1),
+		Vector2i(7, 3),
+		Vector2i(8, 3),
+		Vector2i(9, 3),
+		Vector2i(6, 5),
+	]
+	data.pickup_cells = pickups_008
+	data.exit_cell = Vector2i(12, 1)
+
+	return data
+
+# ---------------------------------------------------------------------------
+# Level 009 — "Guard Rush"
+# ---------------------------------------------------------------------------
+## 14 × 8 · 3 guards · 6 pickups · mechanics: guards converge from right
+##
+## All three guards spawn at col 12 — one per walk row — and rush left
+## simultaneously.  The exit is at the far LEFT of the bottom walk row,
+## forcing the player to race right for pickups then sprint back left to
+## escape.  DIRT_SLOW in R2 creates trapping opportunities above the mid
+## and lower guards.  Twin LADDER columns at col 4 and col 10 let the
+## player descend quickly while creating natural chokepoints.
+##
+## Grid (14 cols, 0–13):
+##
+##   R0  ##############   ceiling
+##   R1  #............#   [player@1,1]  [guard1@12,1]
+##   R2  ####DDD###DDD#   platform — DIRT_SLOW@4,5,6; DIRT_SLOW@10,11,12
+##   R3  #...L.....L..#   walk row  — LADDER@4; LADDER@10  [guard2@12,3]
+##   R4  ####L#####L###   platform — LADDER@4; LADDER@10
+##   R5  #...L.....L..#   walk row  — LADDER@4; LADDER@10  [guard3@12,5]
+##   R6  ##############   solid bottom platform
+##   R7  ##############   floor
+##
+## Reachability path:
+##   (1,1) →walk right→ (4,1),(7,1),(10,1) pickups — guard1 closing in!
+##   (5,1) →dig (4,2) DIRT_SLOW→ walk to (4,1) →fall to (4,3) ← on L@4
+##   (4,3) pickup collected while on ladder; →L@4 down→ (4,5) in R5
+##   (4,5) →walk right→ (7,5) pickup; →(10,5) pickup on L@10
+##   →walk left all the way→ (1,5) exit  [guards from col 12 converging!]
+##
+## Design note (spec correction):
+##   Original R6 "#.L........L.#" left col 12 in R6 as EMPTY, so guard3
+##   at (12,5) would have no solid tile below.  R6 changed to "##############"
+##   (solid platform) so all entities in R5 stand firm at every column.
+static func _level_009() -> LevelData:
+	var data := LevelData.new()
+	data.level_id = "level_009"
+	data.level_index = 9
+	data.level_name = "Guard Rush"
+	data.grid_cols = 14
+	data.grid_rows = 8
+
+	var rows: Array[String] = [
+		"##############",  # R0 — ceiling
+		"#............#",  # R1 — upper walk row
+		"####DDD###DDD#",  # R2 — upper platform; DIRT_SLOW@4,5,6; DIRT_SLOW@10,11,12
+		"#...L.....L..#",  # R3 — mid walk row; LADDER@4; LADDER@10
+		"####L#####L###",  # R4 — mid platform; LADDER@4; LADDER@10
+		"#...L.....L..#",  # R5 — lower walk row; LADDER@4; LADDER@10
+		"##############",  # R6 — solid bottom platform (all cols must be SOLID
+		                   #       so guard3@12,5 stands on a solid tile below)
+		"##############",  # R7 — floor
+	]
+	data.terrain_map = _map_from_ascii(rows, 14)
+
+	data.player_spawn = Vector2i(1, 1)
+
+	var spawns_009: Array[Vector2i] = [Vector2i(12, 1), Vector2i(12, 3), Vector2i(12, 5)]
+	data.enemy_spawns = spawns_009
+
+	var rescate_009: Array[Vector2i] = [Vector2i(12, 0), Vector2i(12, 0), Vector2i(12, 0)]
+	data.enemy_rescate_positions = rescate_009
+
+	# (4,1),(7,1),(10,1): upper walk row — sprint right from spawn before guard1
+	# (4,3): on LADDER@4 in mid walk row — collected while descending
+	# (7,5):  lower walk row — EMPTY cell; collected quickly before guards arrive
+	# (10,5): on LADDER@10 in lower walk row — collected at ladder; then sprint left
+	var pickups_009: Array[Vector2i] = [
+		Vector2i(4, 1),
+		Vector2i(7, 1),
+		Vector2i(10, 1),
+		Vector2i(4, 3),
+		Vector2i(7, 5),
+		Vector2i(10, 5),
+	]
+	data.pickup_cells = pickups_009
+	data.exit_cell = Vector2i(1, 5)
+
+	return data
+
+# ---------------------------------------------------------------------------
+# Level 010 — "The Final Puzzle"
+# ---------------------------------------------------------------------------
+## 14 × 10 · 3 guards · 7 pickups · mechanics: all combined, extra-tall grid
+##
+## The widest and tallest level combines every mechanic.  An upper ROPE band
+## (R3) spans cols 3–10 between LADDER columns at col 2 and col 11.  A middle
+## DIRT_SLOW/DIRT_FAST band (R5) requires careful digging to navigate.  The
+## DIRT_FAST-rich lower platform (R8) provides trapping opportunities near
+## the exit.  Guard 3 starts ON the exit cell — the player must dig the
+## DIRT_SLOW tile below the guard to open a pit, drop the guard in, then
+## sprint to the exit before the tile closes.
+##
+## Grid (14 cols, 0–13; 10 rows, 0–9):
+##
+##   R0  ##############   ceiling
+##   R1  #............#   [player@1,1]  [guard1@12,1]
+##   R2  ##LDDD###FFF##   platform — LADDER@2; DIRT_SLOW@3,4,5; DIRT_FAST@9,10,11
+##   R3  #.LRRRRRRRRL.#   rope walk — LADDER@2; ROPE@3,4,5,6,7,8,9,10; LADDER@11
+##   R4  ##L########L##   mid platform — LADDER@2; LADDER@11
+##   R5  #.LDDD..DDDL.#   mid walk — LADDER@2; DIRT_SLOW@3,4,5;
+##                                    DIRT_SLOW@8,9,10; LADDER@11  [guard2@7,5]
+##   R6  ##L########L##   lower platform — LADDER@2; LADDER@11
+##   R7  #.L........L.#   lower walk — LADDER@2; LADDER@11  [guard3@12,7] ←exit
+##   R8  ##DDDD###FDDD#   lower platform — DIRT_SLOW@2,3,4,5; DIRT_FAST@9;
+##                                         DIRT_SLOW@10,11,12
+##   R9  ##############   floor
+##
+## Reachability path:
+##   (1,1) →walk right→ (3,1) pickup; (10,1) pickup [guard1@12,1 nearby]
+##   (2,1) →L@2 down through R2→ (2,3) →step right→ ROPE@3
+##   →traverse rope→ (4,3),(9,3) pickups; →(11,3) L@11
+##   (2,3) or (11,3) L →down through R4→ (2,5) or (11,5) — collect LADDER pickups
+##   (2,5) or (11,5) →down through R6→ (2,7) or (11,7) in R7
+##   (2,7) →walk right→ (6,7) pickup → near guard3@(12,7)
+##   (11,7) →dig (12,8) DIRT_SLOW from (11,7)→ guard3 falls into pit
+##   →sprint to (12,7) exit before DIRT_SLOW closes!
+##
+## Design notes (spec corrections):
+##   • R2 changed from "##DDD####FFF##" to "##LDDD###FFF##": LADDER added at
+##     col 2 so the player can descend from R1 into R3 to access the ROPE.
+##     DIRT_SLOW shifts from cols 2,3,4 to cols 3,4,5 (functionally equivalent).
+##   • guard2 moved from (7,4) [inside solid platform R4] to (7,5) [EMPTY in R5].
+##     Rescate remains at (7,0).
+##   • guard3@(12,7) intentionally occupies the exit cell — final-puzzle design.
+static func _level_010() -> LevelData:
+	var data := LevelData.new()
+	data.level_id = "level_010"
+	data.level_index = 10
+	data.level_name = "The Final Puzzle"
+	data.grid_cols = 14
+	data.grid_rows = 10
+
+	var rows: Array[String] = [
+		"##############",  # R0 — ceiling
+		"#............#",  # R1 — upper walk row
+		"##LDDD###FFF##",  # R2 — upper platform; LADDER@2; DIRT_SLOW@3,4,5; DIRT_FAST@9,10,11
+		"#.LRRRRRRRRL.#",  # R3 — rope walk row; LADDER@2; ROPE@3,4,5,6,7,8,9,10; LADDER@11
+		"##L########L##",  # R4 — mid platform; LADDER@2; LADDER@11
+		"#.LDDD..DDDL.#",  # R5 — mid walk row; LADDER@2; DIRT_SLOW@3,4,5; DIRT_SLOW@8,9,10; LADDER@11
+		"##L########L##",  # R6 — lower platform; LADDER@2; LADDER@11
+		"#.L........L.#",  # R7 — lower walk row; LADDER@2; LADDER@11
+		"##DDDD###FDDD#",  # R8 — lower platform; DIRT_SLOW@2,3,4,5; DIRT_FAST@9; DIRT_SLOW@10,11,12
+		"##############",  # R9 — floor
+	]
+	data.terrain_map = _map_from_ascii(rows, 14)
+
+	data.player_spawn = Vector2i(1, 1)
+
+	# guard2 corrected from (7,4) [solid R4 platform tile] to (7,5) [EMPTY in R5]
+	# guard3 intentionally placed on exit (12,7) — player must trap it to win
+	var spawns_010: Array[Vector2i] = [Vector2i(12, 1), Vector2i(7, 5), Vector2i(12, 7)]
+	data.enemy_spawns = spawns_010
+
+	var rescate_010: Array[Vector2i] = [Vector2i(12, 0), Vector2i(7, 0), Vector2i(12, 0)]
+	data.enemy_rescate_positions = rescate_010
+
+	# (3,1):  upper walk row — walked to from spawn
+	# (10,1): upper walk row — guard1@12,1 nearby; collect quickly
+	# (4,3):  on ROPE in rope walk row — player hangs to collect
+	# (9,3):  on ROPE in rope walk row — player hangs to collect
+	# (2,5):  on LADDER@2 in mid walk row — collected while descending
+	# (11,5): on LADDER@11 in mid walk row — collected while descending
+	# (6,7):  lower walk row — EMPTY; collected during sprint to exit
+	var pickups_010: Array[Vector2i] = [
+		Vector2i(3, 1),
+		Vector2i(10, 1),
+		Vector2i(4, 3),
+		Vector2i(9, 3),
+		Vector2i(2, 5),
+		Vector2i(11, 5),
+		Vector2i(6, 7),
+	]
+	data.pickup_cells = pickups_010
+	data.exit_cell = Vector2i(12, 7)
 
 	return data
 
