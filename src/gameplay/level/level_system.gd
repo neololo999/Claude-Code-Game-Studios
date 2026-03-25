@@ -22,6 +22,17 @@
 class_name LevelSystem
 extends Node
 
+# Explicit preloads so the Godot LSP resolves these types without a full
+# project rescan. Does not conflict with the class_name declarations in
+# the target files — preload() is purely a local alias for the same script.
+# Note: ProgressionSystem is NOT preloaded here because it is registered as
+# an autoload singleton; a const with the same name would hide the singleton
+# and cause a parse error. Its class_name is resolved globally by the engine.
+const TransitionSystem := preload("res://src/systems/transition/transition_system.gd")
+const WorldData := preload("res://src/systems/progression/world_data.gd")
+## Type alias for ProgressionSystem — avoids autoload-name/class-name conflict.
+const _ProgSys := preload("res://src/systems/progression/progression_system.gd")
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -147,8 +158,8 @@ func _ready() -> void:
 	# MAIN-01: if ProgressionSystem autoload has a current level set (by MainMenu
 	# calling start_level()), use it. Otherwise fall back to starting_level_id
 	# so level_01.tscn launched directly in the editor continues to work.
-	var prog: ProgressionSystem = \
-		get_node_or_null("/root/ProgressionSystem") as ProgressionSystem
+	var prog: _ProgSys = \
+		get_node_or_null("/root/ProgressionSystem") as _ProgSys
 	var level_to_load: String = starting_level_id
 	if prog != null and not prog.get_current_level_id().is_empty():
 		level_to_load = prog.get_current_level_id()
@@ -555,8 +566,8 @@ func _on_player_reached_exit() -> void:
 ## Reports stars to ProgressionSystem. WorldComplete check is handled by
 ## _connect_to_progression() which listens to prog.world_completed signal.
 func _on_stars_display_complete(level_id: String, stars_count: int) -> void:
-	var prog: ProgressionSystem = \
-		get_node_or_null("/root/ProgressionSystem") as ProgressionSystem
+	var prog: _ProgSys = \
+		get_node_or_null("/root/ProgressionSystem") as _ProgSys
 	if prog == null:
 		return
 	_connect_to_progression(prog)
@@ -565,7 +576,7 @@ func _on_stars_display_complete(level_id: String, stars_count: int) -> void:
 
 ## Wire ProgressionSystem signals the first time we have a valid reference.
 ## Guards with meta so we connect at most once per scene lifetime.
-func _connect_to_progression(prog: ProgressionSystem) -> void:
+func _connect_to_progression(prog: _ProgSys) -> void:
 	if prog.get_meta("_level_wired", false):
 		return
 	prog.world_completed.connect(_on_progression_world_completed)
@@ -576,8 +587,8 @@ func _connect_to_progression(prog: ProgressionSystem) -> void:
 func _on_progression_world_completed(world_id: String) -> void:
 	if transition == null:
 		return
-	var prog: ProgressionSystem = \
-		get_node_or_null("/root/ProgressionSystem") as ProgressionSystem
+	var prog: _ProgSys = \
+		get_node_or_null("/root/ProgressionSystem") as _ProgSys
 	if prog == null:
 		return
 	var world_state: Dictionary = prog.get_world_state(world_id)

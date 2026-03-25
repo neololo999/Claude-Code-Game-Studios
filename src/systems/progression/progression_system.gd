@@ -10,7 +10,10 @@
 ##   (_on_level_completed after StarsSystem.display_complete).
 ##
 ## Implements: design/gdd/progression.md
-class_name ProgressionSystem
+## Note: No class_name declared — registering a class_name that matches an
+## autoload singleton name causes a parse error in Godot 4. Access the
+## singleton via `get_node_or_null("/root/ProgressionSystem")` or directly
+## through the autoload global `ProgressionSystem`.
 extends Node
 
 # ---------------------------------------------------------------------------

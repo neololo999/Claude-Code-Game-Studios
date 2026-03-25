@@ -22,6 +22,8 @@ const LEVEL_SCENE: String = "res://scenes/levels/level_01.tscn"
 const CARD_MIN_WIDTH: int  = 180
 const CARD_SPACING: int    = 20
 const LOCKED_ALPHA: float  = 0.45
+## Type alias — ProgressionSystem has no class_name (conflicts with autoload).
+const _ProgSys := preload("res://src/systems/progression/progression_system.gd")
 
 # ---------------------------------------------------------------------------
 # Private state
@@ -82,8 +84,8 @@ func _build_ui() -> void:
 	cards_row.add_theme_constant_override("separation", CARD_SPACING)
 	outer.add_child(cards_row)
 
-	var prog: ProgressionSystem = \
-		get_node_or_null("/root/ProgressionSystem") as ProgressionSystem
+	var prog: _ProgSys = \
+		get_node_or_null("/root/ProgressionSystem") as _ProgSys
 
 	if prog != null:
 		for world: WorldData in prog.get_all_worlds():
@@ -165,7 +167,7 @@ func _build_fallback_card(parent: HBoxContainer) -> void:
 	_card_buttons.append(btn)
 
 
-func _auto_focus(prog: ProgressionSystem) -> void:
+func _auto_focus(prog: _ProgSys) -> void:
 	if _card_buttons.is_empty():
 		return
 	var focus_idx: int = 0
@@ -191,8 +193,8 @@ func _auto_focus(prog: ProgressionSystem) -> void:
 # ---------------------------------------------------------------------------
 
 func _on_start_pressed(world_id: String) -> void:
-	var prog: ProgressionSystem = \
-		get_node_or_null("/root/ProgressionSystem") as ProgressionSystem
+	var prog: _ProgSys = \
+		get_node_or_null("/root/ProgressionSystem") as _ProgSys
 	if prog == null:
 		_on_fallback_start_pressed()
 		return
