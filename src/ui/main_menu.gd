@@ -56,12 +56,15 @@ func _build_ui() -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
-	# Outer centred VBox.
+	# Outer centred VBox wrapped in a full-rect CenterContainer.
+	var center: CenterContainer = CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
+
 	var outer: VBoxContainer = VBoxContainer.new()
-	outer.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	outer.alignment = BoxContainer.ALIGNMENT_CENTER
 	outer.add_theme_constant_override("separation", 24)
-	add_child(outer)
+	center.add_child(outer)
 
 	# Title.
 	var title: Label = Label.new()

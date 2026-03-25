@@ -141,5 +141,4 @@ func _on_dig_state_changed(
 		col: int, row: int,
 		_old: TerrainSystem.DigState,
 		_new: TerrainSystem.DigState) -> void:
-	_draw_cell(col, row, GridSystem.CELL_SIZE)
 	queue_redraw()
