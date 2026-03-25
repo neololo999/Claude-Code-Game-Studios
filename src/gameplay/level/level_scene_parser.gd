@@ -49,12 +49,10 @@ static func parse(scene_root: Node, level_id: String = "") -> LevelData:
 		return null
 
 	var tileset: TileSet = tilemap.tile_set
-	if tileset == null:
-		push_error(
-			"LevelSceneParser: TerrainMap in scene '%s' has no TileSet assigned"
-			% scene_root.name
-		)
-		return null
+	# TileSet is optional: if absent, terrain_type is read from atlas column (fallback).
+	# This handles the migration phase where LevelTileMapBuilder populates cells but
+	# terrain_simple.tres may not yet have a terrain_type custom data layer configured.
+	var has_tileset: bool = tileset != null
 
 	var used_rect: Rect2i = tilemap.get_used_rect()
 	if used_rect.size == Vector2i.ZERO:
@@ -71,12 +69,14 @@ static func parse(scene_root: Node, level_id: String = "") -> LevelData:
 			+ "(origin = %s). Tiles will be offset." % used_rect.position
 		)
 
-	var cell_size: Vector2i = tileset.tile_size
+	# Use configured tile_size if TileSet available, otherwise default 32×32.
+	var cell_size: Vector2i = tileset.tile_size if has_tileset else Vector2i(32, 32)
 	var grid_cols: int = used_rect.end.x
 	var grid_rows: int = used_rect.end.y
 
 	# --- terrain_type custom data layer (optional) ---------------------------
-	var terrain_type_layer: int = _find_custom_data_layer(tileset, "terrain_type")
+	var terrain_type_layer: int = _find_custom_data_layer(tileset, "terrain_type") \
+		if has_tileset else -1
 
 	# --- Terrain map ----------------------------------------------------------
 	var terrain_map: PackedInt32Array = PackedInt32Array()
