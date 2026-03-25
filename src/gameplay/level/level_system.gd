@@ -32,6 +32,7 @@ const TransitionSystem := preload("res://src/systems/transition/transition_syste
 const WorldData := preload("res://src/systems/progression/world_data.gd")
 ## Type alias for ProgressionSystem — avoids autoload-name/class-name conflict.
 const _ProgSys := preload("res://src/systems/progression/progression_system.gd")
+const LevelSceneParser := preload("res://src/gameplay/level/level_scene_parser.gd")
 
 # ---------------------------------------------------------------------------
 # Constants

@@ -68,7 +68,6 @@ script = ExtResource("7_input")
 script = ExtResource("14_trr")
 
 [node name="PickupRenderer" type="Node2D" parent="." unique_id=1920529089]
-visible = false
 
 [node name="Pickup1" type="ColorRect" parent="PickupRenderer" unique_id=1224940866]
 offset_left = 112.0

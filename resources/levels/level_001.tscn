@@ -1,18 +1,4 @@
-;; ADR-001 — Level 001 data scene (TileMapLayer-first pipeline).
-;;
-;; TerrainMap uses LevelTileMapBuilder to auto-populate tiles from LevelBuilder
-;; during the migration phase. Once this level is fully designed in the Godot
-;; editor, replace LevelTileMapBuilder with a plain TileMapLayer and the
-;; tile_map_data will be baked directly into this file.
-;;
-;; Node convention (LevelSceneParser):
-;;   TerrainMap  — TileMapLayer (auto-populated by LevelTileMapBuilder._ready)
-;;   PlayerSpawn — Node2D at pixel position (col × 32, row × 32)
-;;   Exit        — Node2D at pixel position
-;;   Enemies/    — Node2D children, one per enemy
-;;                 metadata rescate_col / rescate_row override respawn position
-;;   Pickups/    — Node2D children, one per treasure
-[gd_scene format=3 uid="uid://d7kv3n9t1pq5m"]
+[gd_scene format=3 uid="uid://c51imdlhiveu"]
 
 [ext_resource type="Script" uid="uid://8rsy71fdctwd" path="res://src/tools/level_tilemap_builder.gd" id="1_ltmb"]
 [ext_resource type="TileSet" uid="uid://dig_terrain_tileset" path="res://resources/tilesets/terrain_simple.tres" id="2_tileset"]
