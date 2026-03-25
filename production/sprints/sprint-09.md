@@ -1,7 +1,8 @@
 # Sprint 9 — 2026-07-13 to 2026-07-26
 
-> **Status**: Planned
+> **Status**: Pre-Sprint (starts 2026-07-13)
 > **Created**: 2026-03-23
+> **Last updated**: 2026-03-25
 > **Owner**: Producer
 > **Sprint Number**: 9 (Alpha — Sprint 1 of 3)
 
@@ -30,9 +31,10 @@ ready for the main menu to consume in Sprint 10.
 | Buffer (20%) | 1 day |
 | **Effective capacity** | **5 days** |
 | Stretch capacity (if buffer unused) | +1 day |
-| Tasks loaded — Must Have | 4.5d |
+| Tasks loaded — Must Have | 4.0d (ALPHA-00 ✅ pre-done, saves 0.5d) |
 | Tasks loaded — Should Have | 0.5d |
-| **Total loaded** | **5.0d** (100% of effective capacity) |
+| **Total loaded** | **4.5d** (90% of effective capacity) |
+| Available buffer | 0.5d freed for WORLD2-SKETCH (Nice to Have) or unexpected rework |
 
 ---
 
@@ -61,7 +63,28 @@ for VS milestone close — they do not block Sprint 9 implementation.
 
 ---
 
-## Carryover from Sprint 8
+## Post-Plan Codebase Changes (2026-03-25)
+
+> A significant refactor was committed **after** the Sprint 9 plan was authored
+> (commit `14805c0`). Key changes relevant to this sprint:
+
+| Change | File | Impact on Sprint 9 |
+|--------|------|-------------------|
+| `starting_level_id` export var added; `load_level(id)` promoted to full public API | `level_system.gd` | **Positive for PROGRESSION-01**: ProgressionSystem can call `load_level()` directly in Sprint 10 without API changes. |
+| LevelSystem `_ready()` now auto-starts via `starting_level_id` instead of hardcoded `level_001` | `level_system.gd` | **Positive for Sprint 10**: MainMenu can set `starting_level_id` or call `load_level()` directly. |
+| `level_system.gd` was touched (non-state-machine changes) | `level_system.gd` | **S9-R01 note**: State machine enum (lines 43–50) is unchanged. New file version is the correct base for TRANSITION-01. Implementer must re-read before touching state machine. |
+| Diagonal digging added | `dig_system.gd` | No Sprint 9 impact. |
+| Climbing logic refined | `player_movement.gd` | No Sprint 9 impact. |
+| New `level_02.tscn` TileMap-based scene | `scenes/levels/level_02.tscn` | **Positive for WORLD2-SKETCH** (Nice to Have): a real level_02 scene exists; World 2 sketch levels can build on this pattern. |
+| New tools: `LevelTileMapBuilder`, `TerrainVisualizer` | `src/tools/` | Level design tooling now available for WORLD2-SKETCH. |
+
+> **Action**: Implementer must `git pull` and review `level_system.gd` at
+> `14805c0` before starting TRANSITION-01. The state machine enum is intact;
+> the null-safe fallback design is still valid.
+
+---
+
+
 
 None blocking Sprint 9 implementation. VS-RELEASE (manual) runs in parallel.
 
@@ -98,15 +121,15 @@ Sequential constraints:
 - **Path B**: `GDD-PROGRESSION` (0.5d) → `PROGRESSION-01` (1.5d) = **2.0d chain**
 - Paths A and B are **independent** — can be done sequentially on Days 1–4.
 
-**Recommended sequencing for solo developer (5 days):**
+**Recommended sequencing for solo developer (5 days) — revised post-ALPHA-00:**
 
 | Day | Focus |
 |-----|-------|
-| Day 1 | `ALPHA-00` (0.5d) + `GDD-TRANSITIONS` (0.5d) + `GDD-PROGRESSION` (0.5d — start) |
-| Day 2 | `GDD-PROGRESSION` (finish 0.5d) + `TRANSITION-01` start (0.5d) |
-| Day 3 | `TRANSITION-01` (finish 1.0d) |
+| Day 1 | `GDD-TRANSITIONS` (0.5d) + `GDD-PROGRESSION` (0.5d) + `TRANSITION-01` start (0.5d) |
+| Day 2 | `TRANSITION-01` (continue 1.0d) |
+| Day 3 | `TRANSITION-01` finish (0.5d) + `PROGRESSION-01` start (0.5d) |
 | Day 4 | `PROGRESSION-01` (1.0d) |
-| Day 5 | `PROGRESSION-01` (finish 0.5d) + `GDD-MENU` (0.5d, Should Have) |
+| Day 5 | `PROGRESSION-01` finish (0.5d) + `GDD-MENU` (0.5d) + WORLD2-SKETCH if buffer remains |
 
 ---
 
@@ -116,7 +139,7 @@ Sequential constraints:
 
 | ID | Task | Owner | Est. Days | Dependencies | Acceptance Criteria |
 |----|------|-------|-----------|-------------|---------------------|
-| **ALPHA-00** | Create `production/milestones/alpha.md`. Must cover: milestone definition, success criteria (Navigation × 4, Transitions × 6, Progression × 4, Content × 4, Stability × 4), scope boundaries, 3-sprint plan (9–11), 4 Alpha systems with effort estimates, risk register (4 risks), validation criteria, and pointer to Full Vision. | Producer | 0.5d | — | `production/milestones/alpha.md` committed. All sections present. Sprint plan table shows Sprints 9–11 with dates and deliverables. |
+| **ALPHA-00** ✅ | Create `production/milestones/alpha.md`. Must cover: milestone definition, success criteria (Navigation × 4, Transitions × 6, Progression × 4, Content × 4, Stability × 4), scope boundaries, 3-sprint plan (9–11), 4 Alpha systems with effort estimates, risk register (4 risks), validation criteria, and pointer to Full Vision. | Producer | 0.5d | — | ✅ **Done** (commit `d69539a`, 2026-03-23). `production/milestones/alpha.md` committed ahead of sprint start. |
 | **GDD-TRANSITIONS** | Author `design/gdd/transition-screens.md`. Must cover: the 3 screen types (victory, game-over, world-complete), LevelSystem state machine extension (`TRANSITION_SCREEN` state after `VICTORY`, `GAME_OVER` state after `DYING`), signal contracts (`TransitionScreen.confirmed` → LevelSystem advances; `TransitionScreen.quit_to_menu` → future MainMenu handles), layout specs for each screen (victory: stars + time + "Continue"; game-over: death count + "Retry" / "Quit to Menu"; world-complete: total stars + "Next World"), `CanvasLayer` placement (layer 30, above StarsDisplay at 20 and HUD at 10), and null-safe fallback (if TransitionSystem not present, LevelSystem uses existing VICTORY_HOLD_TIME). | Game Designer | 0.5d | — | `design/gdd/transition-screens.md` committed. Covers all 3 screen types, state machine extension, signal contracts, layout specs, CanvasLayer placement, and null-safe fallback. Reviewed by implementer before TRANSITION-01 starts. |
 | **GDD-PROGRESSION** | Author `design/gdd/progression.md`. Must cover: world data model (`WorldData` resource: `world_id`, `world_name`, `level_ids: Array[String]`, `unlock_condition`), `ProgressionSystem` node placement (autoload or scene child — justify), session state model (`SaveSlot` class: `unlocked_worlds: Array[String]`, `level_stars: Dictionary`, `current_world_id: String`, `current_level_id: String`), world unlock logic (completing last level of World N emits `world_completed` → ProgressionSystem unlocks World N+1), public API (`start_level(world_id, level_id)`, `on_level_completed(level_id, stars)`, `get_world_state(world_id) -> WorldState`, `is_world_unlocked(world_id) -> bool`), and the Full Vision stub contract (ProgressionSystem serializes to/from `SaveSlot`; Full Vision only adds `FileAccess` I/O without changing the API). | Game Designer | 0.5d | — | `design/gdd/progression.md` committed. Covers WorldData model, SaveSlot class, ProgressionSystem placement, world unlock logic, public API, and Full Vision stub contract. |
 | **TRANSITION-01** ★CP | Implement `src/systems/transition/transition_system.gd` and the three screen scenes/scripts. Add `TRANSITION_SCREEN` and `GAME_OVER` states to `LevelSystem`'s `State` enum. **Victory flow**: on `level_victory`, instead of starting the `VICTORY_HOLD_TIME` timer, enter `TRANSITION_SCREEN` and instantiate `VictoryScreen` (CanvasLayer 30): shows stars from `StarsSystem.get_stars()` and elapsed time from `StarsSystem.get_time_elapsed()`. Player presses any key → `TransitionSystem.confirmed` → LevelSystem calls `_do_next_level()`. **Game-over flow**: on `player_died`, after `DEATH_FREEZE_TIME`, enter `GAME_OVER` and instantiate `GameOverScreen`: shows death count, "Retry" (→ `_do_restart()`), "Quit to Menu" (→ stub: `print("[LevelSystem] Quit to menu")`). Both screens are `CanvasLayer` nodes instantiated at runtime and freed on confirmation. Null-safe: if `TransitionSystem` is not present, LevelSystem falls back to existing `VICTORY_HOLD_TIME` timer. `LevelSystem.@export var transition: TransitionSystem` (nullable). | Programmer | 1.5d | GDD-TRANSITIONS | Victory screen appears after `level_victory` showing correct star count and time. Any keypress advances to next level. Game-over screen appears after death freeze showing death count. Retry restarts level. Quit to menu prints stub message. Both screens null-safe (game works without TransitionSystem). No new `push_error`. |
@@ -140,7 +163,7 @@ Sequential constraints:
 
 | ID | Risk | Probability | Impact | Owner | Mitigation |
 |----|------|-------------|--------|-------|------------|
-| **S9-R01** | `TRANSITION-01` requires modifying `LevelSystem`'s 7-state machine, which has been stable since Sprint 4. Adding `TRANSITION_SCREEN` and `GAME_OVER` states risks breaking existing `DYING → RESTARTING` and `VICTORY → TRANSITIONING` flows. | High | High | Programmer | Read `level_system.gd` in full before touching the state machine. Add the new states as additional branches in `_process()` — do not restructure existing branches. The null-safe fallback (VICTORY_HOLD_TIME when TransitionSystem is null) means existing behaviour is preserved for any scene that doesn't wire TransitionSystem. Regression test: all 10 levels with TransitionSystem = null before wiring it in. |
+| **S9-R01** | `TRANSITION-01` requires modifying `LevelSystem`'s 7-state machine, which was last touched in commit `14805c0` (2026-03-25). Adding `TRANSITION_SCREEN` and `GAME_OVER` states risks breaking existing `DYING → RESTARTING` and `VICTORY → TRANSITIONING` flows. | High | High | Programmer | Read `level_system.gd` at `HEAD` before touching the state machine — it was modified post-planning. The state machine enum (lines 43–50) is unchanged as of `14805c0`; the new `starting_level_id` and `load_level()` refactor does not affect state transitions. Add the new states as additional branches in `_process()` — do not restructure existing branches. The null-safe fallback (VICTORY_HOLD_TIME when TransitionSystem is null) means existing behaviour is preserved for any scene that doesn't wire TransitionSystem. Regression test: all 10 levels with TransitionSystem = null before wiring it in. |
 | **S9-R02** | `PROGRESSION-01` is designed for autoload but the existing LevelSystem is not — connecting them in Sprint 10 may require a scene restructure. | Medium | Medium | Technical Director | Defer the autoload decision to the GDD-PROGRESSION authoring step. If autoload creates coupling problems, ProgressionSystem can remain a scene-level node owned by a new `GameRoot` scene introduced in Sprint 10. Document the choice in the GDD. |
 | **S9-R03** | GDD quality for Transitions or Progression requires a revision cycle that delays TRANSITION-01 or PROGRESSION-01 past Day 2. | Low | Medium | Game Designer | Both GDDs authored on Day 1. Implementer reviews and flags any open questions by end of Day 1. Producer resolves same day. Implementer never waits more than one session. |
 | **S9-R04** | Input handling on transition screens conflicts with `LevelSystem._unhandled_input` (Key R / ui_cancel triggers restart during RUNNING). Pressing any key on the victory screen might also trigger the R-key restart. | Medium | Medium | Programmer | Transition screens must be in `TRANSITION_SCREEN` or `GAME_OVER` state — `_unhandled_input` already guards restart with `if level_state != State.RUNNING`. Add the new states as additional no-op branches. Victory screen "any key" handler must call `event.handled = true` (or use `get_viewport().set_input_as_handled()`). |
@@ -152,8 +175,8 @@ Sequential constraints:
 The sprint is **Done** when ALL Must Have criteria below are true:
 
 ### ALPHA-00
-- [ ] `production/milestones/alpha.md` exists and is committed
-- [ ] Covers all 5 success criterion groups, sprint plan, systems table, risk register
+- [x] `production/milestones/alpha.md` exists and is committed ✅ (commit `d69539a`)
+- [x] Covers all 5 success criterion groups, sprint plan, systems table, risk register ✅
 
 ### GDD-TRANSITIONS
 - [ ] `design/gdd/transition-screens.md` exists and is committed
@@ -234,4 +257,4 @@ A task is **Done** when:
 
 ---
 
-*Document owner: Producer | Created: 2026-03-23 | Last updated: 2026-03-23*
+*Document owner: Producer | Created: 2026-03-23 | Last updated: 2026-03-25*
