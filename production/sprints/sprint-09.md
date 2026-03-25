@@ -255,6 +255,14 @@ A task is **Done** when:
   all used in prior sprints. `get_tree().change_scene_to_file()` is Godot
   4.x stable API used in Sprint 10.
 
+- **Level authoring pipeline — décision prise (2026-03-25).** Suite au
+  constat que `LevelBuilder` (code GDScript) limite la créativité pour 60
+  niveaux, l'ADR-001 a été acceptée : migration vers TileMapLayer-first.
+  Sprint 10 devra inclure `LEVELS-PIPELINE-01` (voir
+  `docs/adr/ADR-001-level-authoring-tilemap-migration.md`).
+  Cette décision ne bloque pas Sprint 9 — `LevelBuilder` reste la source
+  de vérité pour les niveaux 001–010 pendant toute cette sprint.
+
 ---
 
 *Document owner: Producer | Created: 2026-03-23 | Last updated: 2026-03-25*
