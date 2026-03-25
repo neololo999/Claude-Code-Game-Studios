@@ -215,6 +215,15 @@ func load_level(level_id: String) -> void:
 			var scene_root: Node = packed.instantiate()
 			data = LevelSceneParser.parse(scene_root, level_id)
 			scene_root.free()
+			# Migration phase: if the scene has no TerrainMap yet, fill terrain
+			# from LevelBuilder and keep entity positions from the scene.
+			if data != null and data.terrain_map.is_empty():
+				var legacy: LevelData = LevelBuilder.build(level_id)
+				if legacy != null:
+					data.terrain_map = legacy.terrain_map
+					data.grid_cols = legacy.grid_cols
+					data.grid_rows = legacy.grid_rows
+					data.level_name = legacy.level_name
 
 	# 2. Fallback: .tres resource file (legacy).
 	if data == null:
