@@ -213,12 +213,7 @@ func load_level(level_id: String) -> void:
 		var packed: PackedScene = ResourceLoader.load(scene_path) as PackedScene
 		if packed != null:
 			var scene_root: Node = packed.instantiate()
-			# add_child triggers _ready() on all child nodes, which is required
-			# when TerrainMap uses LevelTileMapBuilder to auto-populate cells
-			# from LevelBuilder during the migration phase (ADR-001).
-			add_child(scene_root)
 			data = LevelSceneParser.parse(scene_root, level_id)
-			remove_child(scene_root)
 			scene_root.free()
 
 	# 2. Fallback: .tres resource file (legacy).
