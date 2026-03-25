@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bigeg2qbhg3by"]
+[gd_scene format=3 uid="uid://ctkjn4ttd7ilw"]
 
 [ext_resource type="Script" uid="uid://njou6o3n7l6c" path="res://src/gameplay/level/level_system.gd" id="1_lvlsys"]
 [ext_resource type="Script" uid="uid://7xv4uk7ivbcn" path="res://src/systems/grid/grid_system.gd" id="2_grdsys"]
@@ -21,8 +21,9 @@
 [ext_resource type="Script" uid="uid://wo0orqtynln2" path="res://src/systems/audio/audio_system.gd" id="19_aud"]
 [ext_resource type="Resource" path="res://resources/configs/audio_config.tres" id="20_audcfg"]
 [ext_resource type="Script" uid="uid://dpf3jpmkglhsn" path="res://src/systems/vfx/vfx_system.gd" id="21_vfx"]
+[ext_resource type="Script" path="res://src/tools/terrain_visualizer.gd" id="22_vizualizer"]
 
-[node name="Level01" type="Node" unique_id=1628410723]
+[node name="Level02" type="Node" unique_id=1628410723]
 script = ExtResource("1_lvlsys")
 grid = NodePath("GridSystem")
 terrain = NodePath("TerrainSystem")
@@ -41,6 +42,7 @@ hud = NodePath("HUDLayer")
 dig = NodePath("DigSystem")
 audio = NodePath("AudioSystem")
 vfx = NodePath("VfxSystem")
+starting_level_id = "level_002"
 
 [node name="GridSystem" type="Node" parent="." unique_id=865623093]
 script = ExtResource("2_grdsys")
@@ -65,40 +67,40 @@ script = ExtResource("6_pckup")
 script = ExtResource("7_input")
 
 [node name="TerrainRenderer" type="Node2D" parent="." unique_id=916416347]
-visible = false
 script = ExtResource("14_trr")
 
-[node name="PickupRenderer" type="Node2D" parent="." unique_id=1920529089]
+[node name="TerrainVisualizer" type="Node2D" parent="."]
+script = ExtResource("22_vizualizer")
+level_id = "level_002"
 
-[node name="Pickup1" type="ColorRect" parent="PickupRenderer" unique_id=1224940866]
-offset_left = 112.0
-offset_top = 48.0
-offset_right = 144.0
-offset_bottom = 80.0
+[node name="PickupRenderer" type="Node2D" parent="."]
+
+[node name="Pickup1" type="ColorRect" parent="PickupRenderer"]
+position = Vector2(112, 48)
+size = Vector2(32, 32)
 color = Color(0, 0.8, 1, 0.8)
 
-[node name="Pickup2" type="ColorRect" parent="PickupRenderer" unique_id=817932918]
-offset_left = 208.0
-offset_top = 112.0
-offset_right = 240.0
-offset_bottom = 144.0
+[node name="Pickup2" type="ColorRect" parent="PickupRenderer"]
+position = Vector2(272, 48)
+size = Vector2(32, 32)
 color = Color(0, 0.8, 1, 0.8)
 
-[node name="Pickup3" type="ColorRect" parent="PickupRenderer" unique_id=1635524480]
-offset_left = 144.0
-offset_top = 176.0
-offset_right = 176.0
-offset_bottom = 208.0
+[node name="Pickup3" type="ColorRect" parent="PickupRenderer"]
+position = Vector2(112, 176)
+size = Vector2(32, 32)
 color = Color(0, 0.8, 1, 0.8)
 
-[node name="Exit" type="ColorRect" parent="PickupRenderer" unique_id=1411837134]
-offset_left = 272.0
-offset_top = 176.0
-offset_right = 304.0
-offset_bottom = 208.0
+[node name="Pickup4" type="ColorRect" parent="PickupRenderer"]
+position = Vector2(240, 176)
+size = Vector2(32, 32)
+color = Color(0, 0.8, 1, 0.8)
+
+[node name="Exit" type="ColorRect" parent="PickupRenderer"]
+position = Vector2(272, 176)
+size = Vector2(32, 32)
 color = Color(1, 1, 0, 0.8)
 
-[node name="EntityRenderer" type="Node2D" parent="." unique_id=1300457356]
+[node name="EntityRenderer" type="Node2D" parent="."]
 script = ExtResource("15_entr")
 
 [node name="CameraController" type="Camera2D" parent="." unique_id=1272478759]

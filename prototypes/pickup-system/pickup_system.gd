@@ -2,7 +2,6 @@
 # Question: Does signal-driven cell-coincidence detection correctly handle
 #            all pickup collection and exit-unlock states?
 # Date: 2026-03-22
-class_name PickupSystem
 extends Node
 
 # ---------------------------------------------------------------------------

@@ -239,8 +239,8 @@ func _on_entity_landed(id: int) -> void:
 ##   can_climb = is_climbable(col, row) AND is_traversable(col, row-1)
 ##
 ## Climb down (direction.y == 1):
-##   can_climb = is_climbable(col, row)
-##               AND (is_traversable(col, row+1) OR is_climbable(col, row+1))
+##   can_climb = is_traversable(col, row+1)
+##               AND (is_climbable(col, row) OR is_climbable(col, row+1))
 func _validate_and_move(direction: Vector2i) -> void:
 	var col: int = current_cell.x
 	var row: int = current_cell.y
@@ -265,10 +265,11 @@ func _validate_and_move(direction: Vector2i) -> void:
 			_start_move(Vector2i(col, row - 1))
 
 	elif direction.y == 1:
-		# Vertical down — only on LADDER or ROPE.
+		# Vertical down — on LADDER/ROPE, or entering a LADDER/ROPE from above.
 		var can_climb: bool = (
-			_terrain.is_climbable(col, row)
-			and (_terrain.is_traversable(col, row + 1) or _terrain.is_climbable(col, row + 1))
+			_grid.is_valid(col, row + 1)
+			and _terrain.is_traversable(col, row + 1)
+			and (_terrain.is_climbable(col, row) or _terrain.is_climbable(col, row + 1))
 		)
 		if can_climb:
 			_start_move(Vector2i(col, row + 1))

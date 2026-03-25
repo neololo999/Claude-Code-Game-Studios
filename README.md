@@ -1,9 +1,9 @@
 <p align="center">
   <h1 align="center">Claude Code Game Studios</h1>
   <p align="center">
-    Turn a single Claude Code session into a full game development studio.
-    <br />
-    48 agents. 37 workflows. One coordinated AI team.
+	Turn a single Claude Code session into a full game development studio.
+	<br />
+	48 agents. 37 workflows. One coordinated AI team.
   </p>
 </p>
 

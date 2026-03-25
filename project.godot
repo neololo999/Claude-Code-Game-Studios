@@ -12,9 +12,9 @@ config_version=5
 
 config/name="Dig & Dash"
 config/description="A 2D grid-based puzzle-platformer inspired by Lode Runner."
+run/main_scene="res://scenes/levels/level_01.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
-config/run/main_scene="res://scenes/levels/level_01.tscn"
 
 [display]
 

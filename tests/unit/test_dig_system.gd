@@ -11,22 +11,23 @@
 ##   Col:   0    1    2    3    4
 ##   Row 0: [ E,   E,   E,   E,   E ]
 ##   Row 1: [ E,   E,   E,   E,   E ]
-##   Row 2: [ E,   E,   E,   E,   E ]
+##   Row 2: [ E,   E,   E,   E,   E ]   ← player walk row (spawn here)
 ##   Row 3: [ S,  DS,  DS,  DS,   S ]   S=SOLID(1)  DS=DIRT_SLOW(2)
 ##   Row 4: [ S,   S,   S,   S,   S ]   S=SOLID floor
 ##
-## Player default spawn: (2, 3) — grounded by SOLID floor at row 4.
+## Player default spawn: (2, 2) — walk row; grounded by DIRT_SLOW at (2,3).
 ## Left dig target:  (1, 3) = DIRT_SLOW INTACT (AC-01, AC-04, AC-05, AC-06, AC-07, AC-09)
 ## Right dig toward: (3, 3) = DIRT_SLOW INTACT (AC-06 second dig)
-## Rejection target: (0, 3) or (4, 3) = SOLID, non-destructible (AC-02)
+## Rejection target: (4, 3) = SOLID, non-destructible (AC-02)
 ##
 ## Ladder test grid layout (5 × 5):
 ##
 ##   Col:   0    1    2    3    4
-##   Row 3: [ E,  DS,   L,  DS,   E ]   L=LADDER(4)
+##   Row 2: [ E,   E,   L,   E,   E ]   L=LADDER(4) ← player ladder spawn
+##   Row 3: [ E,  DS,   L,  DS,   E ]   dig targets one row below
 ##   Row 4: [ S,   S,   S,   S,   S ]
 ##
-## Player ladder spawn: (2, 3) = LADDER — grounded via is_climbable (AC-08).
+## Player ladder spawn: (2, 2) = LADDER — grounded by LADDER at (2,3) (AC-08).
 ##
 ## dig_duration = 0.05 s for fast test execution.
 extends Node
@@ -48,11 +49,11 @@ const _TEST_DATA: Array[int] = [
 	1, 1, 1, 1, 1,  # row 4 — SOLID floor
 ]
 
-## Ladder grid: LADDER at (2,3), DIRT_SLOW at (1,3) and (3,3).
+## Ladder grid: LADDER at (2,2) and (2,3); DIRT_SLOW at (1,3) and (3,3).
 const _LADDER_TEST_DATA: Array[int] = [
 	0, 0, 0, 0, 0,  # row 0
 	0, 0, 0, 0, 0,  # row 1
-	0, 0, 0, 0, 0,  # row 2
+	0, 0, 4, 0, 0,  # row 2 — LADDER(4) at col 2 (player walk row)
 	0, 2, 4, 2, 0,  # row 3 — DIRT_SLOW(2) at cols 1,3; LADDER(4) at col 2
 	1, 1, 1, 1, 1,  # row 4 — SOLID floor
 ]
@@ -89,7 +90,7 @@ func _test_ac01_dig_started_emitted() -> void:
 	var terrain: TerrainSystem = world["terrain"] as TerrainSystem
 	var input: InputSystem = world["input"] as InputSystem
 
-	player.spawn(Vector2i(2, 3))
+	player.spawn(Vector2i(2, 2))
 
 	var sig_fired: bool = false
 	(world["dig"] as DigSystem).dig_started.connect(
@@ -120,8 +121,8 @@ func _test_ac02_non_destructible_rejected() -> void:
 	var player: PlayerMovement = world["player"] as PlayerMovement
 	var input: InputSystem = world["input"] as InputSystem
 
-	# Spawn at (3,3); dig right → target (4,3) = SOLID = not destructible.
-	player.spawn(Vector2i(3, 3))
+	# Spawn at (3,2); dig right → target (4,3) = SOLID = not destructible.
+	player.spawn(Vector2i(3, 2))
 
 	var sig_fired: bool = false
 	(world["dig"] as DigSystem).dig_started.connect(
@@ -147,7 +148,7 @@ func _test_ac03_falling_rejected() -> void:
 	var player: PlayerMovement = world["player"] as PlayerMovement
 	var input: InputSystem = world["input"] as InputSystem
 
-	player.spawn(Vector2i(2, 3))
+	player.spawn(Vector2i(2, 2))
 	# Force FALLING state directly (bypasses normal state transition for test isolation).
 	player._state = PlayerMovement.State.FALLING
 
@@ -175,7 +176,7 @@ func _test_ac04_double_dig_second_rejected() -> void:
 	var player: PlayerMovement = world["player"] as PlayerMovement
 	var input: InputSystem = world["input"] as InputSystem
 
-	player.spawn(Vector2i(2, 3))
+	player.spawn(Vector2i(2, 2))
 
 	var sig_count: int = 0
 	(world["dig"] as DigSystem).dig_started.connect(
@@ -209,7 +210,7 @@ func _test_ac05_notify_digging_before_dig_request() -> void:
 	var gravity: GridGravity = world["gravity"] as GridGravity
 	var input: InputSystem = world["input"] as InputSystem
 
-	player.spawn(Vector2i(2, 3))
+	player.spawn(Vector2i(2, 2))
 
 	# When terrain fires dig_state_changed (inside dig_request), check whether
 	# GridGravity._digging_entities already contains the player id.
@@ -243,7 +244,7 @@ func _test_ac06_after_cooldown_new_dig_accepted() -> void:
 	var input: InputSystem = world["input"] as InputSystem
 	var dig: DigSystem = world["dig"] as DigSystem
 
-	player.spawn(Vector2i(2, 3))
+	player.spawn(Vector2i(2, 2))
 
 	var sig_count: int = 0
 	dig.dig_started.connect(func(_c: int, _r: int) -> void: sig_count += 1)
@@ -276,7 +277,7 @@ func _test_ac07_dig_started_correct_coordinates() -> void:
 	var player: PlayerMovement = world["player"] as PlayerMovement
 	var input: InputSystem = world["input"] as InputSystem
 
-	player.spawn(Vector2i(2, 3))
+	player.spawn(Vector2i(2, 2))
 
 	var sig_col: int = -1
 	var sig_row: int = -1
@@ -286,7 +287,7 @@ func _test_ac07_dig_started_correct_coordinates() -> void:
 			sig_row = r
 	)
 
-	# Dig left: target should be (1, 3).
+	# Dig left from (2,2): target should be (1, 3) — one row below.
 	input.dig_requested.emit(Vector2i(-1, 0))
 
 	if sig_col == 1 and sig_row == 3:
@@ -310,18 +311,18 @@ func _test_ac08_ladder_grounded_dig_allowed() -> void:
 	var gravity: GridGravity = world["gravity"] as GridGravity
 	var input: InputSystem = world["input"] as InputSystem
 
-	# Spawn at (2,3) = LADDER. is_grounded(2,3) = true via is_climbable (EC-03).
-	player.spawn(Vector2i(2, 3))
+	# Spawn at (2,2) = LADDER. is_grounded(2,2) = true via LADDER at (2,3).
+	player.spawn(Vector2i(2, 2))
 
-	# Sanity-check: confirm is_grounded is true due to LADDER, not floor.
-	var grounded_via_ladder: bool = gravity.is_grounded(2, 3)
+	# Sanity-check: confirm is_grounded is true due to LADDER below.
+	var grounded_via_ladder: bool = gravity.is_grounded(2, 2)
 
 	var sig_fired: bool = false
 	(world["dig"] as DigSystem).dig_started.connect(
 		func(_c: int, _r: int) -> void: sig_fired = true
 	)
 
-	# Dig right → (3,3) = DIRT_SLOW INTACT → should be accepted.
+	# Dig right from (2,2) → target (3,3) = DIRT_SLOW INTACT → should be accepted.
 	input.dig_requested.emit(Vector2i(1, 0))
 
 	if grounded_via_ladder and sig_fired:
@@ -347,7 +348,7 @@ func _test_ac09_dig_toward_open_rejected() -> void:
 	var input: InputSystem = world["input"] as InputSystem
 	var dig: DigSystem = world["dig"] as DigSystem
 
-	player.spawn(Vector2i(2, 3))
+	player.spawn(Vector2i(2, 2))
 
 	# First dig: (1,3) → terrain transitions INTACT → DIGGING.
 	input.dig_requested.emit(Vector2i(-1, 0))
@@ -391,7 +392,7 @@ func _test_ac10_reset_during_digging() -> void:
 	var input: InputSystem = world["input"] as InputSystem
 	var dig: DigSystem = world["dig"] as DigSystem
 
-	player.spawn(Vector2i(2, 3))
+	player.spawn(Vector2i(2, 2))
 
 	# Start a dig to enter DIGGING state.
 	input.dig_requested.emit(Vector2i(-1, 0))

@@ -719,7 +719,7 @@ static func _level_009() -> LevelData:
 		"####L#####L###",  # R4 — mid platform; LADDER@4; LADDER@10
 		"#...L.....L..#",  # R5 — lower walk row; LADDER@4; LADDER@10
 		"##############",  # R6 — solid bottom platform (all cols must be SOLID
-		                   #       so guard3@12,5 stands on a solid tile below)
+						   #       so guard3@12,5 stands on a solid tile below)
 		"##############",  # R7 — floor
 	]
 	data.terrain_map = _map_from_ascii(rows, 14)

@@ -63,7 +63,7 @@ func setup(player: Node2D, level_data: LevelData) -> void:
 		position_smoothing_speed   = config.smooth_speed if config else 5.0
 	else:
 		# Center the level in the viewport; disable smoothing.
-		offset = Vector2(_level_width / 2.0, _level_height / 2.0)
+		offset = Vector2.ZERO
 		position_smoothing_enabled = false
 		global_position = Vector2(_level_width / 2.0, _level_height / 2.0)
 

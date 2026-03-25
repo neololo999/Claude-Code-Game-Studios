@@ -137,7 +137,7 @@ func get_cooldown_ratio() -> float:
 ##   1. DigSystem is in READY state (no active cooldown).
 ##   2. Player state is IDLE (0) or MOVING (1) — not FALLING or DEAD.
 ##   3. Player is grounded at their current cell.
-##   4. Target cell = (player.x + direction.x, player.y) — same row, horizontal only.
+##   4. Target cell = (player.x + direction.x, player.y + 1) — one row below (Lode Runner diagonal dig).
 ##   5. Target cell is destructible (DIRT_SLOW or DIRT_FAST).
 ##   6. Target cell dig state is INTACT (not already being dug or open).
 ##
@@ -157,10 +157,10 @@ func _on_dig_requested(direction: Vector2i) -> void:
 	if not _gravity.is_grounded(_player.current_cell.x, _player.current_cell.y):
 		return
 
-	# 4 — compute target (horizontal-only: same row)
+	# 4 — compute target (diagonal below: Lode Runner style)
 	var target: Vector2i = Vector2i(
 		_player.current_cell.x + direction.x,
-		_player.current_cell.y,
+		_player.current_cell.y + 1,
 	)
 
 	# 5 — destructibility check

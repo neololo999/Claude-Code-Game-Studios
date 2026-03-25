@@ -101,6 +101,10 @@ signal game_completed
 ## Sprint 8: Stars/Scoring — null-safe; game runs correctly without it.
 @export var stars: StarsSystem
 
+## Starting level ID when the scene is loaded (default: "level_001").
+## Override in the inspector for each level scene.
+@export var starting_level_id: String = "level_001"
+
 # ---------------------------------------------------------------------------
 # Public read-only state
 # ---------------------------------------------------------------------------
@@ -131,8 +135,9 @@ var _is_initialized: bool = false
 
 func _ready() -> void:
 	set_process(false)
-	# Auto-start level_001 when the scene is run directly.
-	call_deferred("load_level", "level_001")
+	_resolve_dependencies_from_scene()
+	# Auto-start the level specified in starting_level_id (default: level_001).
+	load_level(starting_level_id)
 
 
 ## Handle timed state transitions for DYING and VICTORY.
@@ -160,7 +165,9 @@ func load_level(level_id: String) -> void:
 	set_process(true)
 
 	var path: String = LEVELS_DIR + level_id + ".tres"
-	var data: LevelData = ResourceLoader.load(path) as LevelData
+	var data: LevelData = null
+	if FileAccess.file_exists(path):
+		data = ResourceLoader.load(path) as LevelData
 	if data == null:
 		# Fallback: generate the level in code. Allows play without .tres files.
 		data = LevelBuilder.build(level_id)
@@ -201,6 +208,51 @@ func restart() -> void:
 # Private methods — Initialisation
 # ---------------------------------------------------------------------------
 
+## Resolve required system references from child node names when export links
+## are missing in the scene resource.
+func _resolve_dependencies_from_scene() -> void:
+	if grid == null:
+		grid = get_node_or_null("GridSystem") as GridSystem
+	if terrain == null:
+		terrain = get_node_or_null("TerrainSystem") as TerrainSystem
+	if gravity == null:
+		gravity = get_node_or_null("GridGravity") as GridGravity
+	if player == null:
+		player = get_node_or_null("PlayerMovement") as PlayerMovement
+	if pickups == null:
+		pickups = get_node_or_null("PickupSystem") as PickupSystem
+	if input_node == null:
+		input_node = get_node_or_null("InputSystem") as InputSystem
+	if dig == null:
+		dig = get_node_or_null("DigSystem") as DigSystem
+	# Also resolve optional nodes
+	if hud == null:
+		hud = get_node_or_null("HUDLayer") as HUDController
+	if camera == null:
+		camera = get_node_or_null("CameraController") as CameraController
+	if terrain_renderer == null:
+		terrain_renderer = get_node_or_null("TerrainRenderer") as TerrainRenderer
+	if entity_renderer == null:
+		entity_renderer = get_node_or_null("EntityRenderer") as EntityRenderer
+	if audio == null:
+		audio = get_node_or_null("AudioSystem") as AudioSystem
+	if vfx == null:
+		vfx = get_node_or_null("VfxSystem") as VfxSystem
+	if stars == null:
+		stars = get_node_or_null("StarsSystem") as StarsSystem
+
+
+## Ensure required dependencies exist before setup() calls.
+func _has_required_dependencies() -> bool:
+	return (
+		grid != null
+		and terrain != null
+		and gravity != null
+		and player != null
+		and pickups != null
+		and input_node != null
+	)
+
 ## Full level initialisation. Called by load_level() and _do_restart().
 ##
 ## First call: performs one-time system setup (terrain.setup, gravity.setup,
@@ -210,6 +262,11 @@ func restart() -> void:
 ## TerrainSystem.initialize() calls GridSystem.initialize() internally —
 ## grid.initialize() must NOT be called separately (see LevelBootstrap).
 func _initialize_level(data: LevelData) -> void:
+	if not _has_required_dependencies():
+		push_error("LevelSystem: missing required node references (Grid/Terrain/Gravity/Player/Pickups/InputSystem)")
+		level_state = State.IDLE
+		return
+
 	# -----------------------------------------------------------------------
 	# One-time system setup — guarded to prevent duplicate signal connections.
 	# -----------------------------------------------------------------------

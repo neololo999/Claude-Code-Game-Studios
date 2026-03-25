@@ -1,0 +1,26 @@
+[gd_resource type="TileSet" uid="uid://dig_terrain_tileset"]
+
+tile_size = Vector2i(32, 32)
+physics_layer_0/physics_material = SubResource("PhysicsMaterial_0")
+sources_count = 1
+source_0 = SubResource("TileSetAtlasSource_0")
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_0"]
+friction = 1.0
+
+[sub_resource type="Image" id="TilesetImage"]
+width = 160
+height = 32
+format = 29
+
+[sub_resource type="ImageTexture" id="TilesetTexture"]
+image = SubResource("TilesetImage")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0"]
+texture = SubResource("TilesetTexture")
+texture_region_size = Vector2i(32, 32)
+0:0/0 = 0
+1:0/0 = 1
+2:0/0 = 2
+3:0/0 = 3
+4:0/0 = 4
