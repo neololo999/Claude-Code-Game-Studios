@@ -1,6 +1,6 @@
 # Sprint 9 — 2026-07-13 to 2026-07-26
 
-> **Status**: Pre-Sprint (starts 2026-07-13)
+> **Status**: Active
 > **Created**: 2026-03-23
 > **Last updated**: 2026-03-25
 > **Owner**: Producer
@@ -26,7 +26,7 @@ ready for the main menu to consume in Sprint 10.
 
 | Metric | Value |
 |--------|-------|
-| Sprint dates | 2026-07-13 → 2026-07-26 |
+| Sprint dates | 2026-03-25 → 2026-04-07 |
 | Working days in sprint | 6 (3 days/week × 2 weeks) |
 | Buffer (20%) | 1 day |
 | **Effective capacity** | **5 days** |
@@ -140,16 +140,16 @@ Sequential constraints:
 | ID | Task | Owner | Est. Days | Dependencies | Acceptance Criteria |
 |----|------|-------|-----------|-------------|---------------------|
 | **ALPHA-00** ✅ | Create `production/milestones/alpha.md`. Must cover: milestone definition, success criteria (Navigation × 4, Transitions × 6, Progression × 4, Content × 4, Stability × 4), scope boundaries, 3-sprint plan (9–11), 4 Alpha systems with effort estimates, risk register (4 risks), validation criteria, and pointer to Full Vision. | Producer | 0.5d | — | ✅ **Done** (commit `d69539a`, 2026-03-23). `production/milestones/alpha.md` committed ahead of sprint start. |
-| **GDD-TRANSITIONS** | Author `design/gdd/transition-screens.md`. Must cover: the 3 screen types (victory, game-over, world-complete), LevelSystem state machine extension (`TRANSITION_SCREEN` state after `VICTORY`, `GAME_OVER` state after `DYING`), signal contracts (`TransitionScreen.confirmed` → LevelSystem advances; `TransitionScreen.quit_to_menu` → future MainMenu handles), layout specs for each screen (victory: stars + time + "Continue"; game-over: death count + "Retry" / "Quit to Menu"; world-complete: total stars + "Next World"), `CanvasLayer` placement (layer 30, above StarsDisplay at 20 and HUD at 10), and null-safe fallback (if TransitionSystem not present, LevelSystem uses existing VICTORY_HOLD_TIME). | Game Designer | 0.5d | — | `design/gdd/transition-screens.md` committed. Covers all 3 screen types, state machine extension, signal contracts, layout specs, CanvasLayer placement, and null-safe fallback. Reviewed by implementer before TRANSITION-01 starts. |
-| **GDD-PROGRESSION** | Author `design/gdd/progression.md`. Must cover: world data model (`WorldData` resource: `world_id`, `world_name`, `level_ids: Array[String]`, `unlock_condition`), `ProgressionSystem` node placement (autoload or scene child — justify), session state model (`SaveSlot` class: `unlocked_worlds: Array[String]`, `level_stars: Dictionary`, `current_world_id: String`, `current_level_id: String`), world unlock logic (completing last level of World N emits `world_completed` → ProgressionSystem unlocks World N+1), public API (`start_level(world_id, level_id)`, `on_level_completed(level_id, stars)`, `get_world_state(world_id) -> WorldState`, `is_world_unlocked(world_id) -> bool`), and the Full Vision stub contract (ProgressionSystem serializes to/from `SaveSlot`; Full Vision only adds `FileAccess` I/O without changing the API). | Game Designer | 0.5d | — | `design/gdd/progression.md` committed. Covers WorldData model, SaveSlot class, ProgressionSystem placement, world unlock logic, public API, and Full Vision stub contract. |
-| **TRANSITION-01** ★CP | Implement `src/systems/transition/transition_system.gd` and the three screen scenes/scripts. Add `TRANSITION_SCREEN` and `GAME_OVER` states to `LevelSystem`'s `State` enum. **Victory flow**: on `level_victory`, instead of starting the `VICTORY_HOLD_TIME` timer, enter `TRANSITION_SCREEN` and instantiate `VictoryScreen` (CanvasLayer 30): shows stars from `StarsSystem.get_stars()` and elapsed time from `StarsSystem.get_time_elapsed()`. Player presses any key → `TransitionSystem.confirmed` → LevelSystem calls `_do_next_level()`. **Game-over flow**: on `player_died`, after `DEATH_FREEZE_TIME`, enter `GAME_OVER` and instantiate `GameOverScreen`: shows death count, "Retry" (→ `_do_restart()`), "Quit to Menu" (→ stub: `print("[LevelSystem] Quit to menu")`). Both screens are `CanvasLayer` nodes instantiated at runtime and freed on confirmation. Null-safe: if `TransitionSystem` is not present, LevelSystem falls back to existing `VICTORY_HOLD_TIME` timer. `LevelSystem.@export var transition: TransitionSystem` (nullable). | Programmer | 1.5d | GDD-TRANSITIONS | Victory screen appears after `level_victory` showing correct star count and time. Any keypress advances to next level. Game-over screen appears after death freeze showing death count. Retry restarts level. Quit to menu prints stub message. Both screens null-safe (game works without TransitionSystem). No new `push_error`. |
-| **PROGRESSION-01** ★CP | Implement `src/systems/progression/progression_system.gd`, `src/systems/progression/world_data.gd`, and `src/systems/progression/save_slot.gd`. `WorldData` resource: `world_id: String`, `world_name: String`, `level_ids: Array[String]`. `SaveSlot` class: `unlocked_worlds: Array[String]`, `level_stars: Dictionary`, `current_world_id: String`, `current_level_id: String` — no file I/O, in-memory only. `ProgressionSystem` (Node, candidate for autoload): initialises with an Array of `WorldData` representing the 3 Alpha worlds; World 1 unlocked by default. Implements `start_level()`, `on_level_completed(level_id, stars)` (updates SaveSlot + checks world completion), `is_world_unlocked(world_id)`, `get_world_state(world_id)`. Emits `world_completed(world_id: String)` and `world_unlocked(world_id: String)`. Does NOT yet drive LevelSystem — that connection is Sprint 10 (MainMenu). | Programmer | 1.5d | GDD-PROGRESSION | `ProgressionSystem` initialises with 3 worlds. `on_level_completed("level_010", 3)` correctly unlocks World 2. `is_world_unlocked("world_02")` returns true after World 1 is completed. SaveSlot data model matches GDD spec. No crashes. No `push_error`. |
+| **GDD-TRANSITIONS** | Author `design/gdd/transition-screens.md`. | Game Designer | 0.5d | — | ✅ **Done** |
+| **GDD-PROGRESSION** | Author `design/gdd/progression.md`. | Game Designer | 0.5d | — | ✅ **Done** |
+| **TRANSITION-01** ★CP | Implement `src/systems/transition/transition_system.gd` and the three screen classes. Add `TRANSITION_SCREEN` and `GAME_OVER` states to `LevelSystem.State`. | Programmer | 1.5d | GDD-TRANSITIONS | ✅ **Done** | **Victory flow**: on `level_victory`, instead of starting the `VICTORY_HOLD_TIME` timer, enter `TRANSITION_SCREEN` and instantiate `VictoryScreen` (CanvasLayer 30): shows stars from `StarsSystem.get_stars()` and elapsed time from `StarsSystem.get_time_elapsed()`. Player presses any key → `TransitionSystem.confirmed` → LevelSystem calls `_do_next_level()`. **Game-over flow**: on `player_died`, after `DEATH_FREEZE_TIME`, enter `GAME_OVER` and instantiate `GameOverScreen`: shows death count, "Retry" (→ `_do_restart()`), "Quit to Menu" (→ stub: `print("[LevelSystem] Quit to menu")`). Both screens are `CanvasLayer` nodes instantiated at runtime and freed on confirmation. Null-safe: if `TransitionSystem` is not present, LevelSystem falls back to existing `VICTORY_HOLD_TIME` timer. `LevelSystem.@export var transition: TransitionSystem` (nullable). | Programmer | 1.5d | GDD-TRANSITIONS | Victory screen appears after `level_victory` showing correct star count and time. Any keypress advances to next level. Game-over screen appears after death freeze showing death count. Retry restarts level. Quit to menu prints stub message. Both screens null-safe (game works without TransitionSystem). No new `push_error`. |
+| **PROGRESSION-01** ★CP | Implement `src/systems/progression/progression_system.gd`, `world_data.gd`, `save_slot.gd`. | Programmer | 1.5d | GDD-PROGRESSION | ✅ **Done** | `WorldData` resource: `world_id: String`, `world_name: String`, `level_ids: Array[String]`. `SaveSlot` class: `unlocked_worlds: Array[String]`, `level_stars: Dictionary`, `current_world_id: String`, `current_level_id: String` — no file I/O, in-memory only. `ProgressionSystem` (Node, candidate for autoload): initialises with an Array of `WorldData` representing the 3 Alpha worlds; World 1 unlocked by default. Implements `start_level()`, `on_level_completed(level_id, stars)` (updates SaveSlot + checks world completion), `is_world_unlocked(world_id)`, `get_world_state(world_id)`. Emits `world_completed(world_id: String)` and `world_unlocked(world_id: String)`. Does NOT yet drive LevelSystem — that connection is Sprint 10 (MainMenu). | Programmer | 1.5d | GDD-PROGRESSION | `ProgressionSystem` initialises with 3 worlds. `on_level_completed("level_010", 3)` correctly unlocks World 2. `is_world_unlocked("world_02")` returns true after World 1 is completed. SaveSlot data model matches GDD spec. No crashes. No `push_error`. |
 
 ### Should Have (0.5d)
 
 | ID | Task | Owner | Est. Days | Dependencies | Acceptance Criteria |
 |----|------|-------|-----------|-------------|---------------------|
-| **GDD-MENU** | Author `design/gdd/main-menu.md`. Design only — implementation is Sprint 10. Must cover: scene structure (MainMenu scene replaces direct `level_001` autoload in `_ready`), 3 UI states (WorldSelect, LevelSelect-stub, Settings-stub), WorldSelect layout (world cards showing world name + star count + lock/unlock status), navigation flow (MainMenu → ProgressionSystem.start_level() → LevelSystem.load_level()), and "return to menu" contract (LevelSystem emits `return_to_menu` signal; MainMenu scene is reloaded via `get_tree().change_scene_to_file()`). | Game Designer | 0.5d | PROGRESSION-01 | `design/gdd/main-menu.md` committed. Covers scene structure, 3 UI states, WorldSelect layout, navigation flow, and return-to-menu contract. |
+| **GDD-MENU** | Author `design/gdd/main-menu.md`. | Game Designer | 0.5d | PROGRESSION-01 | ✅ **Done** |
 
 ### Nice to Have
 
@@ -179,34 +179,34 @@ The sprint is **Done** when ALL Must Have criteria below are true:
 - [x] Covers all 5 success criterion groups, sprint plan, systems table, risk register ✅
 
 ### GDD-TRANSITIONS
-- [ ] `design/gdd/transition-screens.md` exists and is committed
-- [ ] Covers all 3 screen types, LevelSystem state extension, signal contracts, layouts, CanvasLayer placement, null-safe fallback
+- [x] `design/gdd/transition-screens.md` exists and is committed
+- [x] Covers all 3 screen types, LevelSystem state extension, signal contracts, layouts, CanvasLayer placement, null-safe fallback
 
 ### GDD-PROGRESSION
-- [ ] `design/gdd/progression.md` exists and is committed
-- [ ] Covers WorldData model, SaveSlot class, ProgressionSystem placement, public API, Full Vision stub contract
+- [x] `design/gdd/progression.md` exists and is committed
+- [x] Covers WorldData model, SaveSlot class, ProgressionSystem placement, public API, Full Vision stub contract
 
 ### TRANSITION-01
-- [ ] `src/systems/transition/transition_system.gd` exists
-- [ ] `LevelSystem.State` enum includes `TRANSITION_SCREEN` and `GAME_OVER`
-- [ ] Victory screen shows star count + elapsed time after `level_victory`
-- [ ] Any keypress on victory screen advances to next level
-- [ ] Game-over screen shows death count with Retry / Quit to Menu options
-- [ ] Retry correctly restarts the current level
-- [ ] Both screens absent = game behaves exactly as Sprint 8 (null-safe)
-- [ ] No new `push_error` calls
+- [x] `src/systems/transition/transition_system.gd` exists
+- [x] `LevelSystem.State` enum includes `TRANSITION_SCREEN` and `GAME_OVER`
+- [x] Victory screen shows star count + elapsed time after `level_victory`
+- [x] Any keypress on victory screen advances to next level
+- [x] Game-over screen shows death count with Retry / Quit to Menu options
+- [x] Retry correctly restarts the current level
+- [x] Both screens absent = game behaves exactly as Sprint 8 (null-safe)
+- [x] No new `push_error` calls
 
 ### PROGRESSION-01
-- [ ] `src/systems/progression/progression_system.gd` exists
-- [ ] `src/systems/progression/world_data.gd` exists
-- [ ] `src/systems/progression/save_slot.gd` exists
-- [ ] World 1 unlocked by default; World 2 unlocked after `on_level_completed("level_010", any)`
-- [ ] `is_world_unlocked()` returns correct values
-- [ ] `world_completed` and `world_unlocked` signals emit correctly
-- [ ] No `push_error` calls
+- [x] `src/systems/progression/progression_system.gd` exists
+- [x] `src/systems/progression/world_data.gd` exists
+- [x] `src/systems/progression/save_slot.gd` exists
+- [x] World 1 unlocked by default; World 2 unlocked after `on_level_completed("level_010", any)`
+- [x] `is_world_unlocked()` returns correct values
+- [x] `world_completed` and `world_unlocked` signals emit correctly
+- [x] No `push_error` calls
 
 ### Should Have (target, not blocking)
-- [ ] `design/gdd/main-menu.md` exists with scene structure, 3 UI states, and return-to-menu contract
+- [x] `design/gdd/main-menu.md` exists with scene structure, 3 UI states, and return-to-menu contract
 
 ---
 

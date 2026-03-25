@@ -39,15 +39,17 @@ const LEVELS_DIR: String = "res://resources/levels/"
 # Enums
 # ---------------------------------------------------------------------------
 
-## 7-state lifecycle machine.
+## 9-state lifecycle machine.
 enum State {
-	IDLE,          ## Before any level is loaded.
-	LOADING,       ## ResourceLoader.load() in progress.
-	RUNNING,       ## Level active — accepting input and simulation.
-	DYING,         ## Player died; freeze timer counting down.
-	RESTARTING,    ## Systems being reset; about to re-enter RUNNING.
-	VICTORY,       ## All pickups collected and exit reached; hold timer counting down.
-	TRANSITIONING, ## Loading the next level resource.
+	IDLE,               ## Before any level is loaded.
+	LOADING,            ## ResourceLoader.load() in progress.
+	RUNNING,            ## Level active — accepting input and simulation.
+	DYING,              ## Player died; freeze timer counting down.
+	RESTARTING,         ## Systems being reset; about to re-enter RUNNING.
+	VICTORY,            ## All pickups collected and exit reached; hold timer (fallback) or immediate transition.
+	TRANSITIONING,      ## Loading the next level resource.
+	TRANSITION_SCREEN,  ## VictoryScreen displayed; waiting for player confirmation.
+	GAME_OVER,          ## GameOverScreen displayed; waiting for Retry or Quit to Menu.
 }
 
 # ---------------------------------------------------------------------------
@@ -66,8 +68,11 @@ signal level_victory
 ## Emitted after a restart completes and the level re-enters RUNNING.
 signal level_restarted
 
-## Emitted when the last level is beaten and there is no next level.
+## Emitted when all levels are beaten and there is no next level.
 signal game_completed
+
+## Emitted when the player quits to the menu (Sprint 10: triggers scene change).
+signal return_to_menu
 
 # ---------------------------------------------------------------------------
 # @export variables — injected from the scene
@@ -100,6 +105,9 @@ signal game_completed
 
 ## Sprint 8: Stars/Scoring — null-safe; game runs correctly without it.
 @export var stars: StarsSystem
+
+## Sprint 9: Transition screens — null-safe; game uses timer fallback without it.
+@export var transition: TransitionSystem
 
 ## Starting level ID when the scene is loaded (default: "level_001").
 ## Override in the inspector for each level scene.
@@ -136,8 +144,15 @@ var _is_initialized: bool = false
 func _ready() -> void:
 	set_process(false)
 	_resolve_dependencies_from_scene()
-	# Auto-start the level specified in starting_level_id (default: level_001).
-	load_level(starting_level_id)
+	# MAIN-01: if ProgressionSystem autoload has a current level set (by MainMenu
+	# calling start_level()), use it. Otherwise fall back to starting_level_id
+	# so level_01.tscn launched directly in the editor continues to work.
+	var prog: ProgressionSystem = \
+		get_node_or_null("/root/ProgressionSystem") as ProgressionSystem
+	var level_to_load: String = starting_level_id
+	if prog != null and not prog.get_current_level_id().is_empty():
+		level_to_load = prog.get_current_level_id()
+	load_level(level_to_load)
 
 
 ## Handle timed state transitions for DYING and VICTORY.
@@ -146,11 +161,19 @@ func _process(delta: float) -> void:
 		State.DYING:
 			_state_timer -= delta
 			if _state_timer <= 0.0:
-				_do_restart()
+				if transition != null:
+					level_state = State.GAME_OVER
+					transition.show_game_over(death_count)
+				else:
+					_do_restart()
 		State.VICTORY:
 			_state_timer -= delta
 			if _state_timer <= 0.0:
 				_do_next_level()
+		State.TRANSITION_SCREEN:
+			pass  ## Waiting for TransitionSystem.confirmed signal.
+		State.GAME_OVER:
+			pass  ## Waiting for TransitionSystem.retry_requested or quit_to_menu_requested.
 
 # ---------------------------------------------------------------------------
 # Public methods — Lifecycle
@@ -240,6 +263,8 @@ func _resolve_dependencies_from_scene() -> void:
 		vfx = get_node_or_null("VfxSystem") as VfxSystem
 	if stars == null:
 		stars = get_node_or_null("StarsSystem") as StarsSystem
+	if transition == null:
+		transition = get_node_or_null("TransitionSystem") as TransitionSystem
 
 
 ## Ensure required dependencies exist before setup() calls.
@@ -355,6 +380,15 @@ func _initialize_level(data: LevelData) -> void:
 	if stars != null and not stars.get_meta("_stars_setup_done", false):
 		stars.setup(self)
 		stars.set_meta("_stars_setup_done", true)
+	if transition != null and not transition.get_meta("_transition_setup_done", false):
+		transition.confirmed.connect(_on_transition_confirmed)
+		transition.retry_requested.connect(_on_transition_retry)
+		transition.quit_to_menu_requested.connect(_on_transition_quit_to_menu)
+		transition.set_meta("_transition_setup_done", true)
+	# MAIN-03: wire StarsSystem.display_complete → ProgressionSystem.on_level_completed.
+	if stars != null and not stars.get_meta("_progression_wired", false):
+		stars.display_complete.connect(_on_stars_display_complete)
+		stars.set_meta("_progression_wired", true)
 
 
 ## Dynamically create one EnemyController child node per enemy_spawn entry.
@@ -443,15 +477,15 @@ func _do_restart() -> void:
 
 
 ## Advance to the next level alphabetically in LEVELS_DIR.
-## Called when the VICTORY timer expires.
+## Called when the VICTORY timer expires or TransitionSystem.confirmed fires.
 func _do_next_level() -> void:
 	level_state = State.TRANSITIONING
 	var next_id: String = _get_next_level_id()
 	if next_id.is_empty():
-		# EC-01: last level — notify listeners then idle.
-		level_state = State.IDLE
-		print("[LevelSystem] All levels complete! YOU WIN!")
+		# EC-01: last level — return to menu (MAIN-02).
+		return_to_menu.emit()
 		game_completed.emit()
+		get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 		return
 	load_level(next_id)
 
@@ -500,12 +534,88 @@ func _on_player_reached_exit() -> void:
 	if level_state != State.RUNNING:
 		return
 	level_state = State.VICTORY
-	_state_timer = VICTORY_HOLD_TIME
 	level_victory.emit()
+	if transition != null:
+		# Gather star data before entering TRANSITION_SCREEN.
+		var star_count: int = 0
+		var elapsed: float = 0.0
+		if stars != null:
+			star_count = stars.get_stars(_current_level_data.level_id)
+			elapsed = stars.get_time_elapsed()
+		level_state = State.TRANSITION_SCREEN
+		transition.show_victory(star_count, elapsed)
+	else:
+		_state_timer = VICTORY_HOLD_TIME
 
 # ---------------------------------------------------------------------------
 # Input — manual restart
 # ---------------------------------------------------------------------------
+
+## MAIN-03: called after StarsDisplay auto-dismisses.
+## Reports stars to ProgressionSystem. WorldComplete check is handled by
+## _connect_to_progression() which listens to prog.world_completed signal.
+func _on_stars_display_complete(level_id: String, stars_count: int) -> void:
+	var prog: ProgressionSystem = \
+		get_node_or_null("/root/ProgressionSystem") as ProgressionSystem
+	if prog == null:
+		return
+	_connect_to_progression(prog)
+	prog.on_level_completed(level_id, stars_count)
+
+
+## Wire ProgressionSystem signals the first time we have a valid reference.
+## Guards with meta so we connect at most once per scene lifetime.
+func _connect_to_progression(prog: ProgressionSystem) -> void:
+	if prog.get_meta("_level_wired", false):
+		return
+	prog.world_completed.connect(_on_progression_world_completed)
+	prog.set_meta("_level_wired", true)
+
+
+## Show WorldCompleteScreen when ProgressionSystem says a world is done.
+func _on_progression_world_completed(world_id: String) -> void:
+	if transition == null:
+		return
+	var prog: ProgressionSystem = \
+		get_node_or_null("/root/ProgressionSystem") as ProgressionSystem
+	if prog == null:
+		return
+	var world_state: Dictionary = prog.get_world_state(world_id)
+	var all_worlds: Array[WorldData] = prog.get_all_worlds()
+	var current_idx: int = -1
+	for i: int in all_worlds.size():
+		if all_worlds[i].world_id == world_id:
+			current_idx = i
+			break
+	var has_next: bool = current_idx >= 0 and current_idx + 1 < all_worlds.size()
+	var world_name: String = all_worlds[current_idx].world_name if current_idx >= 0 else world_id
+	transition.show_world_complete(
+		world_name,
+		world_state.get("total_stars", 0),
+		world_state.get("max_stars", 0),
+		has_next)
+
+
+## Transition signal callbacks — wired in _initialize_level().
+func _on_transition_confirmed() -> void:
+	if level_state != State.TRANSITION_SCREEN:
+		return
+	_do_next_level()
+
+
+func _on_transition_retry() -> void:
+	if level_state != State.GAME_OVER:
+		return
+	_do_restart()
+
+
+func _on_transition_quit_to_menu() -> void:
+	if level_state != State.GAME_OVER:
+		return
+	# MAIN-02: change to main menu scene and emit return_to_menu for external listeners.
+	return_to_menu.emit()
+	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
 
 ## Key R or ui_cancel triggers a manual restart during RUNNING.
 func _unhandled_input(event: InputEvent) -> void:
