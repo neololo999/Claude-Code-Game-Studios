@@ -1,8 +1,13 @@
-## LevelBuilder — Generates all 5 MVP levels as LevelData Resources in code.
+## LevelBuilder — Generates all 10 MVP levels as LevelData Resources in code.
 ##
-## Used by LevelSystem.load_level() as a fallback when a .tres file is not
-## found under res://resources/levels/. Avoids PackedInt32Array .tres
-## serialisation complexity while keeping level data fully in version control.
+## @deprecated Since Sprint 10 (ADR-001). New levels are authored as .tscn
+## scenes under res://resources/levels/ and parsed by LevelSceneParser.
+## LevelBuilder is retained as a fallback for automated tests and for
+## bootstrapping existing levels before their .tscn migration is complete.
+## It must NOT receive new levels.
+##
+## Used by LevelSystem.load_level() as a final fallback when neither a .tscn
+## scene nor a .tres file is found under res://resources/levels/.
 ##
 ## Usage:
 ##   var data: LevelData = LevelBuilder.build("level_001")

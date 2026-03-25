@@ -43,8 +43,12 @@ const DEATH_FREEZE_TIME: float = 0.5
 ## Seconds to hold the victory state before advancing to the next level.
 const VICTORY_HOLD_TIME: float = 1.5
 
-## Directory containing .tres level resource files.
+## Directory containing .tres level resource files (legacy pipeline).
 const LEVELS_DIR: String = "res://resources/levels/"
+
+## Directory containing .tscn level data scenes (ADR-001 TileMapLayer pipeline).
+## Priority: .tscn > .tres > LevelBuilder (code).
+const LEVELS_SCENES_DIR: String = "res://resources/levels/"
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -192,23 +196,39 @@ func _process(delta: float) -> void:
 
 ## Load a level by ID, initialise all systems, and enter RUNNING.
 ##
-## level_id must match a .tres file in res://resources/levels/.
-## Example: load_level("level_001") loads "res://resources/levels/level_001.tres".
+## Resolution order (ADR-001):
+##   1. TileMapLayer data scene : res://resources/levels/{level_id}.tscn
+##   2. Serialised resource     : res://resources/levels/{level_id}.tres (legacy)
+##   3. Code-generated level    : LevelBuilder.build(level_id)            (legacy)
 func load_level(level_id: String) -> void:
 	level_state = State.LOADING
 	set_process(true)
 
-	var path: String = LEVELS_DIR + level_id + ".tres"
 	var data: LevelData = null
-	if FileAccess.file_exists(path):
-		data = ResourceLoader.load(path) as LevelData
+
+	# 1. TileMapLayer-first pipeline (ADR-001).
+	var scene_path: String = LEVELS_SCENES_DIR + level_id + ".tscn"
+	if FileAccess.file_exists(scene_path):
+		var packed: PackedScene = ResourceLoader.load(scene_path) as PackedScene
+		if packed != null:
+			var scene_root: Node = packed.instantiate()
+			data = LevelSceneParser.parse(scene_root, level_id)
+			scene_root.free()
+
+	# 2. Fallback: .tres resource file (legacy).
 	if data == null:
-		# Fallback: generate the level in code. Allows play without .tres files.
+		var tres_path: String = LEVELS_DIR + level_id + ".tres"
+		if FileAccess.file_exists(tres_path):
+			data = ResourceLoader.load(tres_path) as LevelData
+
+	# 3. Fallback: generate in code (LevelBuilder — legacy, tests only).
+	if data == null:
 		data = LevelBuilder.build(level_id)
+
 	if data == null:
 		push_error(
 			"LevelSystem: could not load or build level '%s' (tried %s)"
-			% [level_id, path]
+			% [level_id, scene_path]
 		)
 		level_state = State.IDLE
 		return
