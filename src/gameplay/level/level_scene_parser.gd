@@ -86,15 +86,19 @@ static func parse(scene_root: Node, level_id: String = "") -> LevelData:
 	for row: int in range(grid_rows):
 		for col: int in range(grid_cols):
 			var cell: Vector2i = Vector2i(col, row)
-			var tile_data: TileData = tilemap.get_cell_tile_data(cell)
-			if tile_data == null:
-				continue
-			var terrain_id: int
+			var terrain_id: int = 0
 			if terrain_type_layer >= 0:
+				# TileSet present with terrain_type layer — authoritative path.
+				var tile_data: TileData = tilemap.get_cell_tile_data(cell)
+				if tile_data == null:
+					continue
 				terrain_id = tile_data.get_custom_data_by_layer_id(terrain_type_layer)
 			else:
 				# Fallback: atlas column + 1 = terrain_id (matches LevelTileMapBuilder).
+				# get_cell_atlas_coords returns (-1,-1) for empty cells.
 				var atlas_coords: Vector2i = tilemap.get_cell_atlas_coords(cell)
+				if atlas_coords == Vector2i(-1, -1):
+					continue
 				terrain_id = atlas_coords.x + 1
 			terrain_map[row * grid_cols + col] = terrain_id
 
