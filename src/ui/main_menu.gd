@@ -18,6 +18,7 @@ extends Control
 # Constants
 # ---------------------------------------------------------------------------
 
+#const LEVEL_SCENE: String = "res://scenes/levels/level_01.tscn"
 const LEVEL_SCENE: String = "res://scenes/levels/level_01.tscn"
 const CARD_MIN_WIDTH: int  = 180
 const CARD_SPACING: int    = 20
