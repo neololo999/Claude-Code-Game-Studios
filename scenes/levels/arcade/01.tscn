@@ -1,0 +1,122 @@
+[gd_scene format=4 uid="uid://dkgrlmlhs4qtd"]
+
+[ext_resource type="Script" uid="uid://bmou5k85qy3no" path="res://src/gameplay/level/arcade_bootstrap.gd" id="1_boot"]
+[ext_resource type="Script" uid="uid://7xv4uk7ivbcn" path="res://src/systems/grid/grid_system.gd" id="2_grid"]
+[ext_resource type="Script" uid="uid://b6r06s1hrnbbe" path="res://src/systems/terrain/terrain_system.gd" id="3_terrain"]
+[ext_resource type="Script" uid="uid://dlu7vrvbefo3x" path="res://src/systems/gravity/grid_gravity.gd" id="4_grav"]
+[ext_resource type="Script" uid="uid://bifejkdfwmhdf" path="res://src/gameplay/player/player_movement.gd" id="5_player"]
+[ext_resource type="Script" uid="uid://b3ihdubq6m43o" path="res://src/gameplay/player/dig_system.gd" id="6_dig"]
+[ext_resource type="Script" uid="uid://co3nkahgm65at" path="res://src/gameplay/pickups/pickup_system.gd" id="7_pickups"]
+[ext_resource type="Script" uid="uid://bmbn5eiil6o8v" path="res://src/systems/input/input_system.gd" id="8_input"]
+[ext_resource type="Script" uid="uid://bhqcyndd1lolc" path="res://src/systems/terrain/terrain_config.gd" id="11_h727k"]
+[ext_resource type="Script" uid="uid://c53e3nkxryct1" path="res://src/systems/gravity/gravity_config.gd" id="12_3cq0j"]
+[ext_resource type="TileSet" uid="uid://b6ubf38ndyfqs" path="res://resources/tilesets/terrain_simple.tres" id="12_ts"]
+[ext_resource type="Script" uid="uid://dmponn1akwy3b" path="res://src/systems/rendering/entity_renderer.gd" id="13_entr"]
+[ext_resource type="Script" uid="uid://qheha3a5wwnr" path="res://src/systems/input/input_config.gd" id="13_wmf7t"]
+[ext_resource type="Script" uid="uid://f8a8aeoxxjgh" path="res://src/gameplay/enemy/enemy_config.gd" id="14_w3sau"]
+
+[sub_resource type="Resource" id="Resource_lf2sx"]
+script = ExtResource("11_h727k")
+metadata/_custom_type_script = "uid://bhqcyndd1lolc"
+
+[sub_resource type="Resource" id="Resource_7rtb6"]
+script = ExtResource("12_3cq0j")
+metadata/_custom_type_script = "uid://c53e3nkxryct1"
+
+[sub_resource type="Resource" id="Resource_62ir5"]
+script = ExtResource("13_wmf7t")
+metadata/_custom_type_script = "uid://qheha3a5wwnr"
+
+[sub_resource type="Resource" id="Resource_6a8i1"]
+script = ExtResource("14_w3sau")
+metadata/_custom_type_script = "uid://f8a8aeoxxjgh"
+
+[node name="01" type="Node2D" unique_id=1274333550]
+
+[node name="TileMapRoot" type="Node2D" parent="." unique_id=1671359785]
+
+[node name="Solid" type="TileMapLayer" parent="TileMapRoot" unique_id=1457808747]
+tile_map_data = PackedByteArray("AAAAABUAAQAAAAAAAAABABUAAQAAAAAAAAACABUAAQAAAAAAAAADABUAAQAAAAAAAAAEABUAAQAAAAAAAAAFABUAAQAAAAAAAAAGABUAAQAAAAAAAAAHABUAAQAAAAAAAAAIABUAAQAAAAAAAAAJABUAAQAAAAAAAAAKABUAAQAAAAAAAAALABUAAQAAAAAAAAAMABUAAQAAAAAAAAANABUAAQAAAAAAAAAOABUAAQAAAAAAAAAPABUAAQAAAAAAAAAQABUAAQAAAAAAAAARABUAAQAAAAAAAAASABUAAQAAAAAAAAATABUAAQAAAAAAAAAUABUAAQAAAAAAAAAVABUAAQAAAAAAAAAWABUAAQAAAAAAAAAXABUAAQAAAAAAAAAYABUAAQAAAAAAAAAZABUAAQAAAAAAAAAaABUAAQAAAAAAAAAbABUAAQAAAAAAAAAdABUAAQAAAAAAAAAeABUAAQAAAAAAAAAfABUAAQAAAAAAAAAgABUAAQAAAAAAAAAhABUAAQAAAAAAAAAiABUAAQAAAAAAAAAjABUAAQAAAAAAAAAkABUAAQAAAAAAAAAlABUAAQAAAAAAAAAmABUAAQAAAAAAAAAnABUAAQAAAAAAAAAAAAAAAQAAAAAAAAAAAAEAAQAAAAAAAAAAAAIAAQAAAAAAAAAAAAMAAQAAAAAAAAAAAAQAAQAAAAAAAAAAAAUAAQAAAAAAAAAAAAYAAQAAAAAAAAAAAAcAAQAAAAAAAAAAAAgAAQAAAAAAAAAAAAkAAQAAAAAAAAAAAAoAAQAAAAAAAAAAAAsAAQAAAAAAAAAAAAwAAQAAAAAAAAAAAA0AAQAAAAAAAAAAAA4AAQAAAAAAAAAAAA8AAQAAAAAAAAAAABAAAQAAAAAAAAAAABEAAQAAAAAAAAAAABIAAQAAAAAAAAAAABMAAQAAAAAAAAAAABQAAQAAAAAAAAAnAAAAAQAAAAAAAAAnAAEAAQAAAAAAAAAnAAIAAQAAAAAAAAAnAAMAAQAAAAAAAAAnAAQAAQAAAAAAAAAnAAUAAQAAAAAAAAAnAAYAAQAAAAAAAAAnAAcAAQAAAAAAAAAnAAgAAQAAAAAAAAAnAAkAAQAAAAAAAAAnAAoAAQAAAAAAAAAnAAsAAQAAAAAAAAAnAAwAAQAAAAAAAAAnAA0AAQAAAAAAAAAnAA4AAQAAAAAAAAAnAA8AAQAAAAAAAAAnABAAAQAAAAAAAAAnABEAAQAAAAAAAAAnABIAAQAAAAAAAAAnABMAAQAAAAAAAAAnABQAAQAAAAAAAAAEAAYABAAAAAAAAAAFAAYABAABAAAAAAAGAAYABAABAAAAAAAHAAYABAABAAAAAAAIAAYABAABAAAAAAAKAAYABAABAAAAAAAJAAYABAABAAAAAAALAAYABAABAAAAAAAMAAYABAABAAAAAAANAAYABAABAAAAAAAOAAYABAABAAAAAAAPAAYABAACAAEAAAAPAAcABAACAAIAAAAPAAgABAACAAIAAAAPAAkABAACAAIAAAAFAAEABAAAAAEAAAAFAAQABAAAAAMAAAAGAAEABAABAAEAAAAGAAQABAABAAMAAAAHAAEABAABAAEAAAAHAAQABAABAAMAAAAIAAEABAABAAEAAAAIAAQABAABAAMAAAAJAAEABAACAAEAAAAJAAQABAABAAMAAAAKAAEABAABAAEAAAAKAAQABAABAAMAAAAFAAIABAAAAAIAAAAFAAMABAAAAAIAAAALAAEABAACAAEAAAALAAMABAACAAIAAAALAAQABAACAAMAAAAPAAoABAADAAIAAAAPAAsABAADAAIAAAAPAAwABAADAAIAAAAPAA0ABAADAAIAAAAPAA4ABAADAAIAAAAPAA8ABAADAAIAAAAPABAABAADAAIAAAAPABEABAADAAIAAAAPABIABAADAAIAAAAPABMABAADAAIAAAAPABQABAADAAIAAAAOABQABAADAAIAAAANABQABAADAAIAAAANABMABAADAAIAAAANABIABAADAAIAAAANABEABAADAAIAAAANABAABAADAAIAAAANAA8ABAADAAIAAAANAA4ABAADAAIAAAANAA0ABAADAAIAAAANAAwABAADAAIAAAAOAAwABAADAAIAAAAQAAwABAADAAIAAAARAAwABAADAAIAAAASAAwABAADAAIAAAATAAwABAADAAIAAAAUAAwABAADAAIAAAAVAAwABAADAAIAAAAWAAwABAADAAIAAAAXAAwABAADAAIAAAAYAAwABAADAAIAAAAZAAwABAADAAIAAAAaAAwABAADAAIAAAAbAAwABAADAAIAAAAcAAwABAADAAIAAAAcAA0ABAADAAIAAAAcAA4ABAADAAIAAAAcAA8ABAADAAIAAAAcABAABAADAAIAAAAcABEABAADAAIAAAAcABIABAADAAIAAAAcABMABAADAAIAAAAcABQABAADAAIAAAAaABQABAADAAIAAAAaABMABAADAAIAAAAaABIABAADAAIAAAAaABEABAADAAIAAAAbABEABAADAAIAAAAdABEABAADAAIAAAAeABEABAADAAIAAAAfABEABAADAAIAAAAgABEABAADAAIAAAAhABEABAADAAIAAAAhABIABAADAAIAAAAhABMABAADAAIAAAAhABQABAADAAIAAAAeAAcABAADAAIAAAAeAAgABAADAAIAAAAeAAkABAADAAIAAAAeAAoABAADAAIAAAAeAAsABAADAAIAAAAfAAsABAADAAIAAAAgAAsABAADAAIAAAAhAAsABAADAAIAAAAiAAsABAADAAIAAAAjAAsABAADAAIAAAAjAAoABAADAAIAAAAjAAkABAADAAIAAAAjAAgABAADAAIAAAAjAAcABAADAAIAAAAiAAcABAADAAIAAAAhAAcABAADAAIAAAAgAAcABAADAAIAAAAfAAcABAADAAIAAAAUAAQABAADAAIAAAAUAAUABAADAAIAAAAUAAYABAADAAIAAAAUAAcABAADAAIAAAAUAAgABAADAAIAAAAUAAkABAADAAIAAAAVAAkABAADAAIAAAAWAAkABAADAAIAAAAXAAkABAADAAIAAAAYAAkABAADAAIAAAAZAAkABAADAAIAAAAZAAgABAADAAIAAAAZAAcABAADAAIAAAAZAAYABAADAAIAAAAZAAUABAADAAIAAAAZAAQABAADAAIAAAAYAAQABAADAAIAAAAXAAQABAADAAIAAAAWAAQABAADAAIAAAAVAAQABAADAAIAAAA=")
+tile_set = ExtResource("12_ts")
+
+[node name="DirtSlow" type="TileMapLayer" parent="TileMapRoot" unique_id=1804251166]
+visible = false
+tile_set = ExtResource("12_ts")
+
+[node name="DirtFast" type="TileMapLayer" parent="TileMapRoot" unique_id=771319843]
+visible = false
+tile_set = ExtResource("12_ts")
+
+[node name="Ladder" type="TileMapLayer" parent="TileMapRoot" unique_id=449847123]
+tile_map_data = PackedByteArray("AAADAAwAAgAAAAAAAAADAAsAAgAAAAAAAAADAAoAAgAAAAAAAAADAAkAAgAAAAAAAAADAAYAAgAAAAAAAAADAAcAAgAAAAAAAAADAAgAAgAAAAAAAAAEAAUAAgAAAAAAAAAEAAQAAgAAAAAAAAAEAAMAAgAAAAAAAAAEAAIAAgAAAAAAAAAEAAEAAgAAAAAAAAAQAAYAAgAAAAAAAAAQAAcAAgAAAAAAAAAQAAgAAgAAAAAAAAAQAAsAAgAAAAAAAAADAA0AAgAAAAAAAAADAA4AAgAAAAAAAAADAA8AAgAAAAAAAAADABAAAgAAAAAAAAADABEAAgAAAAAAAAADABIAAgAAAAAAAAADABMAAgAAAAAAAAADABQAAgAAAAAAAAAPABMABAADAAIAAAAeAAYAAgAAAAAAAAAeAAUAAgAAAAAAAAAeAAQAAgAAAAAAAAAeAAMAAgAAAAAAAAAeAAIAAgAAAAAAAAAeAAEAAgAAAAAAAAAUAAMAAgAAAAAAAAAUAAIAAgAAAAAAAAAUAAEAAgAAAAAAAAAUAAAAAgAAAAAAAAAdABAAAgAAAAAAAAAdAA8AAgAAAAAAAAAdAA4AAgAAAAAAAAAdAA0AAgAAAAAAAAAdAAwAAgAAAAAAAAAQAAoAAgAAAAAAAAAQAAkAAgAAAAAAAAALAAIAAQAEAAAAAAAMAAIAAQAEAAAAAAANAAIAAQAEAAAAAAAOAAIAAQAEAAAAAAAPAAIAAQAEAAAAAAAQAAIAAQAEAAAAAAARAAIAAQAEAAAAAAASAAIAAQAEAAAAAAATAAIAAQAEAAAAAAAdAAIAAQAEAAAAAAAcAAIAAQAEAAAAAAAbAAIAAQAEAAAAAAAaAAIAAQAEAAAAAAAZAAIAAQAEAAAAAAA=")
+tile_set = ExtResource("12_ts")
+
+[node name="Rope" type="TileMapLayer" parent="TileMapRoot" unique_id=1611119779]
+visible = false
+tile_set = ExtResource("12_ts")
+
+[node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1552912907]
+position = Vector2(1088, 640)
+
+[node name="Exit" type="Marker2D" parent="." unique_id=303348952]
+position = Vector2(1184, 640)
+
+[node name="Pickup1" type="Marker2D" parent="." unique_id=2043716485 groups=["Pickup"]]
+position = Vector2(264, 104)
+
+[node name="GridSystem" type="Node" parent="." unique_id=1941431900]
+script = ExtResource("2_grid")
+
+[node name="TerrainSystem" type="Node" parent="." unique_id=217346300]
+script = ExtResource("3_terrain")
+
+[node name="GridGravity" type="Node" parent="." unique_id=300966717]
+script = ExtResource("4_grav")
+
+[node name="PlayerMovement" type="Node2D" parent="." unique_id=526128340]
+script = ExtResource("5_player")
+
+[node name="DigSystem" type="Node" parent="." unique_id=268976832]
+script = ExtResource("6_dig")
+
+[node name="PickupSystem" type="Node" parent="." unique_id=347208630]
+script = ExtResource("7_pickups")
+
+[node name="InputSystem" type="Node" parent="." unique_id=613175439]
+script = ExtResource("8_input")
+
+[node name="EntityRenderer" type="Node2D" parent="." unique_id=444555666]
+position = Vector2(0, -8)
+script = ExtResource("13_entr")
+
+[node name="PickupRenderer" type="Node2D" parent="." unique_id=777888999]
+
+[node name="Pickup1" type="ColorRect" parent="PickupRenderer" unique_id=111222333]
+offset_left = 456.0
+offset_top = 608.0
+offset_right = 488.0
+offset_bottom = 640.0
+color = Color(0, 0.8, 1, 0.8)
+
+[node name="Exit" type="ColorRect" parent="PickupRenderer" unique_id=987654321]
+offset_left = 1184.0
+offset_top = 640.0
+offset_right = 1216.0
+offset_bottom = 672.0
+color = Color(1, 1, 0, 0.8)
+
+[node name="ArcadeBootstrap" type="Node" parent="." unique_id=1324859599 node_paths=PackedStringArray("grid", "terrain", "gravity", "player", "dig", "pickups", "input", "entity_renderer", "tilemap_root")]
+script = ExtResource("1_boot")
+grid = NodePath("../GridSystem")
+terrain = NodePath("../TerrainSystem")
+gravity = NodePath("../GridGravity")
+player = NodePath("../PlayerMovement")
+dig = NodePath("../DigSystem")
+pickups = NodePath("../PickupSystem")
+input = NodePath("../InputSystem")
+entity_renderer = NodePath("../EntityRenderer")
+terrain_config_res = SubResource("Resource_lf2sx")
+gravity_config_res = SubResource("Resource_7rtb6")
+input_config_res = SubResource("Resource_62ir5")
+enemy_config_res = SubResource("Resource_6a8i1")
+tilemap_root = NodePath("../TileMapRoot")

@@ -8,6 +8,7 @@
 ## Sprint 9: data model only — does not drive LevelSystem yet.
 ## Sprint 10: wired to MainMenu (start_level) and LevelSystem
 ##   (_on_level_completed after StarsSystem.display_complete).
+## Sprint 11: dual-mode support (Puzzle + Arcade).
 ##
 ## Implements: design/gdd/progression.md
 ## Note: No class_name declared — registering a class_name that matches an
@@ -26,15 +27,27 @@ signal world_completed(world_id: String)
 ## Emitted when a previously locked world becomes available.
 signal world_unlocked(world_id: String)
 
+## Emitted when the active game mode changes.
+signal mode_changed(new_mode: String)
+
 # ---------------------------------------------------------------------------
 # Private state
 # ---------------------------------------------------------------------------
 
-## Ordered list of all worlds. Index order matters for "complete_previous" unlock.
+## Active mode: "puzzle" or "arcade".
+var _current_mode: String = "puzzle"
+
+## Ordered list of all puzzle worlds. Index order matters for "complete_previous" unlock.
 var _worlds: Array[WorldData] = []
 
-## Single session slot. Full Vision: load from disk into this field.
+## Single session slot for puzzle mode. Full Vision: load from disk into this field.
 var _save_slot: SaveSlot = null
+
+## Ordered list of all arcade worlds.
+var _arcade_worlds: Array[WorldData] = []
+
+## Session slot for arcade mode.
+var _arcade_save_slot: SaveSlot = null
 
 # ---------------------------------------------------------------------------
 # Built-in virtual methods
@@ -47,16 +60,40 @@ func _ready() -> void:
 	_save_slot.current_world_id = "world_01"
 	_save_slot.current_level_id = ""
 
+	_init_arcade_worlds()
+	_arcade_save_slot = SaveSlot.new()
+	_arcade_save_slot.unlocked_worlds = ["arcade_world_01"]
+	_arcade_save_slot.current_world_id = "arcade_world_01"
+	_arcade_save_slot.current_level_id = ""
+
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
+## Set the active game mode ("puzzle" or "arcade"). Emits mode_changed.
+func set_mode(mode: String) -> void:
+	_current_mode = mode
+	mode_changed.emit(mode)
+
+
+## Returns the currently active game mode ("puzzle" or "arcade").
+func get_current_mode() -> String:
+	return _current_mode
+
+
+## Returns the current world id from the active save slot.
+## Replaces direct _save_slot field access from call sites.
+func get_current_world_id() -> String:
+	return _get_active_save_slot().current_world_id
+
+
 ## Record that the player is about to enter world_id / level_id.
 ## Called by MainMenu immediately before change_scene_to_file().
 func start_level(world_id: String, level_id: String) -> void:
-	_save_slot.current_world_id = world_id
-	_save_slot.current_level_id = level_id
+	var slot: SaveSlot = _get_active_save_slot()
+	slot.current_world_id = world_id
+	slot.current_level_id = level_id
 
 
 ## Record that level_id was completed with the given star count.
@@ -68,9 +105,10 @@ func on_level_completed(level_id: String, stars: int) -> void:
 		return
 
 	# Max-rule star update.
-	var previous: int = _save_slot.level_stars.get(level_id, 0)
+	var slot: SaveSlot = _get_active_save_slot()
+	var previous: int = slot.level_stars.get(level_id, 0)
 	if stars > previous:
-		_save_slot.level_stars[level_id] = stars
+		slot.level_stars[level_id] = stars
 
 	# World completion check.
 	var world: WorldData = _find_world_for_level(level_id)
@@ -86,12 +124,12 @@ func on_level_completed(level_id: String, stars: int) -> void:
 ## LevelSystem reads this in _ready() (Sprint 10) instead of starting_level_id.
 ## Returns "" if not yet set — LevelSystem falls back to starting_level_id.
 func get_current_level_id() -> String:
-	return _save_slot.current_level_id
+	return _get_active_save_slot().current_level_id
 
 
-## Returns true if world_id is in the unlocked_worlds list.
+## Returns true if world_id is in the unlocked_worlds list of the active slot.
 func is_world_unlocked(world_id: String) -> bool:
-	return world_id in _save_slot.unlocked_worlds
+	return world_id in _get_active_save_slot().unlocked_worlds
 
 
 ## Returns a summary dictionary for a world, used by WorldSelect UI.
@@ -107,9 +145,10 @@ func get_world_state(world_id: String) -> Dictionary:
 			"level_count": 0,
 			"level_ids": [],
 		}
+	var slot: SaveSlot = _get_active_save_slot()
 	var total: int = 0
 	for lid: String in world.level_ids:
-		total += _save_slot.level_stars.get(lid, 0)
+		total += slot.level_stars.get(lid, 0)
 	return {
 		"unlocked": is_world_unlocked(world_id),
 		"total_stars": total,
@@ -119,10 +158,25 @@ func get_world_state(world_id: String) -> Dictionary:
 	}
 
 
-## Returns the ordered list of all WorldData instances.
+## Returns the ordered list of all WorldData instances for the active mode.
 ## Used by MainMenu to build world cards dynamically.
 func get_all_worlds() -> Array[WorldData]:
+	return _get_active_worlds()
+
+# ---------------------------------------------------------------------------
+# Private helpers — active slot/world accessors
+# ---------------------------------------------------------------------------
+
+func _get_active_worlds() -> Array[WorldData]:
+	if _current_mode == "arcade":
+		return _arcade_worlds
 	return _worlds
+
+
+func _get_active_save_slot() -> SaveSlot:
+	if _current_mode == "arcade":
+		return _arcade_save_slot
+	return _save_slot
 
 # ---------------------------------------------------------------------------
 # Private helpers — initialisation
@@ -147,37 +201,50 @@ func _init_worlds() -> void:
 		WorldData.create("world_03", "World 3 – The Summit", w3_ids, "complete_previous"),
 	]
 
+
+func _init_arcade_worlds() -> void:
+	var a1_ids: Array[String] = ["arcade_001", "arcade_002", "arcade_003"]
+	var a2_ids: Array[String] = ["arcade_004", "arcade_005", "arcade_006"]
+
+	_arcade_worlds = [
+		WorldData.create("arcade_world_01", "Arcade – Zone 1", a1_ids, ""),
+		WorldData.create("arcade_world_02", "Arcade – Zone 2", a2_ids, "complete_previous"),
+	]
+
 # ---------------------------------------------------------------------------
 # Private helpers — logic
 # ---------------------------------------------------------------------------
 
 func _find_world_by_id(world_id: String) -> WorldData:
-	for world: WorldData in _worlds:
+	for world: WorldData in _get_active_worlds():
 		if world.world_id == world_id:
 			return world
 	return null
 
 
 func _find_world_for_level(level_id: String) -> WorldData:
-	for world: WorldData in _worlds:
+	for world: WorldData in _get_active_worlds():
 		if level_id in world.level_ids:
 			return world
 	return null
 
 
 func _is_world_complete(world: WorldData) -> bool:
+	var slot: SaveSlot = _get_active_save_slot()
 	for lid: String in world.level_ids:
-		if _save_slot.level_stars.get(lid, 0) < 1:
+		if slot.level_stars.get(lid, 0) < 1:
 			return false
 	return true
 
 
 func _try_unlock_next_world(completed_world: WorldData) -> void:
-	var idx: int = _worlds.find(completed_world)
-	if idx < 0 or idx + 1 >= _worlds.size():
+	var active_worlds: Array[WorldData] = _get_active_worlds()
+	var idx: int = active_worlds.find(completed_world)
+	if idx < 0 or idx + 1 >= active_worlds.size():
 		return
-	var next_world: WorldData = _worlds[idx + 1]
-	if next_world.world_id in _save_slot.unlocked_worlds:
+	var next_world: WorldData = active_worlds[idx + 1]
+	var slot: SaveSlot = _get_active_save_slot()
+	if next_world.world_id in slot.unlocked_worlds:
 		return
-	_save_slot.unlocked_worlds.append(next_world.world_id)
+	slot.unlocked_worlds.append(next_world.world_id)
 	world_unlocked.emit(next_world.world_id)

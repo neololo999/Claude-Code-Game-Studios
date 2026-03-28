@@ -61,6 +61,10 @@ var cols: int = 0
 ## Number of rows. Valid (non-zero) only while LOADED.
 var rows: int = 0
 
+## World-space offset applied in grid_to_world / world_to_grid.
+## Set by the bootstrap when the TileMap origin is not at world (0, 0).
+var world_offset: Vector2 = Vector2.ZERO
+
 # ---------------------------------------------------------------------------
 # Private variables
 # ---------------------------------------------------------------------------
@@ -184,7 +188,7 @@ func set_cell(col: int, row: int, terrain_id: int) -> void:
 func grid_to_world(col: int, row: int) -> Vector2:
 	if not _guard_loaded("grid_to_world"):
 		return Vector2.ZERO
-	return Vector2(
+	return world_offset + Vector2(
 		col * CELL_SIZE + CELL_SIZE / 2,
 		row * CELL_SIZE + CELL_SIZE / 2
 	)
@@ -200,9 +204,10 @@ func grid_to_world(col: int, row: int) -> Vector2:
 func world_to_grid(world_pos: Vector2) -> Vector2i:
 	if not _guard_loaded("world_to_grid"):
 		return Vector2i.ZERO
+	var local: Vector2 = world_pos - world_offset
 	return Vector2i(
-		int(floor(world_pos.x / CELL_SIZE)),
-		int(floor(world_pos.y / CELL_SIZE))
+		int(floor(local.x / CELL_SIZE)),
+		int(floor(local.y / CELL_SIZE))
 	)
 
 # ---------------------------------------------------------------------------

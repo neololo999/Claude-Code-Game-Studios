@@ -7,6 +7,9 @@
 ## Navigation: arrow keys / gamepad d-pad cycle focus between cards.
 ## Pressing Enter / ui_accept on an unlocked card starts that world.
 ##
+## Flow: mode selection → world cards → level.
+## "← Back" from world cards returns to mode selection.
+##
 ## Null-safe: if ProgressionSystem autoload is not registered, shows a
 ## single fallback card that launches level_001 directly.
 ##
@@ -20,6 +23,7 @@ extends Control
 
 #const LEVEL_SCENE: String = "res://scenes/levels/level_01.tscn"
 const LEVEL_SCENE: String = "res://scenes/levels/level_01.tscn"
+const ARCADE_SCENE: String = "res://scenes/levels/arcade/01.tscn"
 const CARD_MIN_WIDTH: int  = 180
 const CARD_SPACING: int    = 20
 const LOCKED_ALPHA: float  = 0.45
@@ -31,6 +35,9 @@ const _ProgSys := preload("res://src/systems/progression/progression_system.gd")
 # ---------------------------------------------------------------------------
 
 var _card_buttons: Array[Button] = []
+
+## Currently selected game mode. Empty string means mode has not been chosen yet.
+var _selected_mode: String = ""
 
 # ---------------------------------------------------------------------------
 # Built-in virtual methods
@@ -51,6 +58,11 @@ func _unhandled_input(event: InputEvent) -> void:
 # ---------------------------------------------------------------------------
 
 func _build_ui() -> void:
+	# Route to mode selection when no mode has been chosen yet.
+	if _selected_mode == "":
+		_build_mode_selection_ui()
+		return
+
 	# Background.
 	var bg: ColorRect = ColorRect.new()
 	bg.color = Color(0.06, 0.06, 0.10, 1.0)
@@ -100,8 +112,70 @@ func _build_ui() -> void:
 		push_warning("MainMenu: ProgressionSystem autoload not found — showing fallback card.")
 		_build_fallback_card(cards_row)
 
+	# Back button — returns to mode selection.
+	var back_btn: Button = Button.new()
+	back_btn.text = "← Back"
+	back_btn.custom_minimum_size = Vector2(120, 32)
+	back_btn.pressed.connect(_on_back_pressed)
+	outer.add_child(back_btn)
+
 	# Auto-focus: restore to current world or first card.
 	_auto_focus(prog)
+
+
+## Builds the initial mode-selection screen (Puzzle vs Arcade).
+func _build_mode_selection_ui() -> void:
+	# Background.
+	var bg: ColorRect = ColorRect.new()
+	bg.color = Color(0.06, 0.06, 0.10, 1.0)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(bg)
+
+	# Outer centred VBox wrapped in a full-rect CenterContainer.
+	var center: CenterContainer = CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
+
+	var outer: VBoxContainer = VBoxContainer.new()
+	outer.alignment = BoxContainer.ALIGNMENT_CENTER
+	outer.add_theme_constant_override("separation", 24)
+	center.add_child(outer)
+
+	# Title.
+	var title: Label = Label.new()
+	title.text = "Dig & Dash"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 36)
+	outer.add_child(title)
+
+	# Subtitle.
+	var subtitle: Label = Label.new()
+	subtitle.text = "Select Mode"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 16)
+	subtitle.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
+	outer.add_child(subtitle)
+
+	# Mode buttons row.
+	var buttons_row: HBoxContainer = HBoxContainer.new()
+	buttons_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons_row.add_theme_constant_override("separation", CARD_SPACING)
+	outer.add_child(buttons_row)
+
+	var puzzle_btn: Button = Button.new()
+	puzzle_btn.text = "🧩 Puzzle"
+	puzzle_btn.custom_minimum_size = Vector2(CARD_MIN_WIDTH, 48)
+	puzzle_btn.pressed.connect(_on_mode_selected.bind("puzzle"))
+	buttons_row.add_child(puzzle_btn)
+
+	var arcade_btn: Button = Button.new()
+	arcade_btn.text = "🕹️ Arcade"
+	arcade_btn.custom_minimum_size = Vector2(CARD_MIN_WIDTH, 48)
+	arcade_btn.pressed.connect(_on_mode_selected.bind("arcade"))
+	buttons_row.add_child(arcade_btn)
+
+	# Auto-focus the puzzle button.
+	puzzle_btn.grab_focus()
 
 
 func _build_world_card(
@@ -176,7 +250,7 @@ func _auto_focus(prog: _ProgSys) -> void:
 		return
 	var focus_idx: int = 0
 	if prog != null:
-		var current_world: String = prog._save_slot.current_world_id
+		var current_world: String = prog.get_current_world_id()
 		var all_worlds: Array[WorldData] = prog.get_all_worlds()
 		for i: int in all_worlds.size():
 			if all_worlds[i].world_id == current_world \
@@ -192,11 +266,37 @@ func _auto_focus(prog: _ProgSys) -> void:
 				break
 	_card_buttons[focus_idx].grab_focus()
 
+
+## Removes all child nodes (deferred). Also clears the card button registry.
+func _clear_ui() -> void:
+	_card_buttons.clear()
+	for c: Node in get_children():
+		c.queue_free()
+
 # ---------------------------------------------------------------------------
 # Button callbacks
 # ---------------------------------------------------------------------------
 
+func _on_mode_selected(mode: String) -> void:
+	_selected_mode = mode
+	var prog: _ProgSys = \
+		get_node_or_null("/root/ProgressionSystem") as _ProgSys
+	if prog != null:
+		prog.set_mode(mode)
+	_clear_ui()
+	_build_ui()
+
+
+func _on_back_pressed() -> void:
+	_selected_mode = ""
+	_clear_ui()
+	_build_ui()
+
+
 func _on_start_pressed(world_id: String) -> void:
+	if _selected_mode == "arcade":
+		get_tree().change_scene_to_file(ARCADE_SCENE)
+		return
 	var prog: _ProgSys = \
 		get_node_or_null("/root/ProgressionSystem") as _ProgSys
 	if prog == null:
@@ -211,4 +311,7 @@ func _on_start_pressed(world_id: String) -> void:
 
 
 func _on_fallback_start_pressed() -> void:
+	if _selected_mode == "arcade":
+		get_tree().change_scene_to_file(ARCADE_SCENE)
+		return
 	get_tree().change_scene_to_file(LEVEL_SCENE)
