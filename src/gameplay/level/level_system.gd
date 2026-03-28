@@ -400,11 +400,12 @@ func _initialize_level(data: LevelData) -> void:
 	if terrain_renderer != null:
 		terrain_renderer.setup(grid, terrain)
 		terrain_renderer.refresh()
+	# EntityRenderer is deprecated for player visuals.
+	# PlayerAnim (AnimatedSprite2D child of PlayerMovement) is now the source
+	# of visual truth for spawn/movement.
 	if entity_renderer != null:
-		var enemy_nodes: Array[Node2D] = []
-		for e: EnemyController in _enemies:
-			enemy_nodes.append(e)
-		entity_renderer.setup(player, enemy_nodes)
+		entity_renderer.visible = false
+		entity_renderer.set_process(false)
 	if camera != null:
 		camera.setup(player, data)
 	if hud != null:
@@ -460,6 +461,8 @@ func _spawn_enemies(data: LevelData) -> void:
 func _connect_level_signals() -> void:
 	if not pickups.player_reached_exit.is_connected(_on_player_reached_exit):
 		pickups.player_reached_exit.connect(_on_player_reached_exit)
+	if not player.player_moved.is_connected(_on_player_moved):
+		player.player_moved.connect(_on_player_moved)
 
 	for e: EnemyController in _enemies:
 		if not e.enemy_reached_player.is_connected(_on_enemy_reached_player):
@@ -569,10 +572,23 @@ func _on_enemy_reached_player(_enemy_id: int, _cell: Vector2i) -> void:
 	_trigger_death()
 
 
+## Connected to PlayerMovement.player_moved.
+## Handles collision when the player enters an enemy's current cell.
+func _on_player_moved(_from_cell: Vector2i, to_cell: Vector2i) -> void:
+	if level_state != State.RUNNING:
+		return
+	if _is_enemy_on_cell(to_cell):
+		_trigger_death()
+
+
 ## Connected to PickupSystem.player_reached_exit.
 ## EC-06: ignore if already dying (level_state != RUNNING).
 func _on_player_reached_exit() -> void:
 	if level_state != State.RUNNING:
+		return
+	# Collision wins over exit victory: stepping onto an occupied exit cell is death.
+	if player != null and is_instance_valid(player) and _is_enemy_on_cell(player.current_cell):
+		_trigger_death()
 		return
 	level_state = State.VICTORY
 	level_victory.emit()
@@ -587,6 +603,14 @@ func _on_player_reached_exit() -> void:
 		transition.show_victory(star_count, elapsed)
 	else:
 		_state_timer = VICTORY_HOLD_TIME
+
+
+## Returns true if any active enemy currently occupies `cell`.
+func _is_enemy_on_cell(cell: Vector2i) -> bool:
+	for e: EnemyController in _enemies:
+		if e != null and is_instance_valid(e) and e.current_cell == cell:
+			return true
+	return false
 
 # ---------------------------------------------------------------------------
 # Input — manual restart

@@ -23,7 +23,14 @@
 [ext_resource type="Texture2D" uid="uid://dncyl10w3k15x" path="res://assets/sprites/entities/player.png" id="17_player_tex"]
 [ext_resource type="Texture2D" uid="uid://d4hdb70ce3van" path="res://assets/sprites/entities/enemy.png" id="18_enemy_tex"]
 [ext_resource type="Script" uid="uid://b0yqmidgmm3lm" path="res://src/systems/rendering/pickup_sprite.gd" id="19_psprite"]
-[ext_resource type="Script" path="res://src/gameplay/enemy/enemy_controller.gd" id="20_enemy"]
+[ext_resource type="Script" uid="uid://ihqi27x0g8t3" path="res://src/gameplay/enemy/enemy_controller.gd" id="20_enemy"]
+[ext_resource type="Texture2D" uid="uid://6fsiqb54vh7w" path="res://assets/sprites/entities/player/3.png" id="25_cu10i"]
+[ext_resource type="Texture2D" uid="uid://cxpfwi7agqix3" path="res://assets/sprites/entities/player/6.png" id="26_bj06y"]
+[ext_resource type="Texture2D" uid="uid://bvdsyvnuuwrma" path="res://assets/sprites/entities/player/5.png" id="27_rpc27"]
+[ext_resource type="Texture2D" uid="uid://8wk43hqa336h" path="res://assets/sprites/entities/player/4.png" id="28_m0w88"]
+[ext_resource type="Texture2D" uid="uid://b8kpqh4comnlr" path="res://assets/sprites/entities/player/2.png" id="29_p5k8n"]
+[ext_resource type="Texture2D" uid="uid://b1d51mpj43ob0" path="res://assets/sprites/entities/player/1.png" id="30_7jwdt"]
+[ext_resource type="Script" uid="uid://duud4yo6fa40b" path="res://src/systems/rendering/player_animation_controller.gd" id="31_gsn6j"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cyberpunk"]
 shader = ExtResource("3_shader")
@@ -37,6 +44,43 @@ shader_parameter/tint_color = Color(0.3, 0.6, 1, 1)
 shader_parameter/tint_strength = 0.0
 shader_parameter/parallax_offset = Vector2(0, 0)
 shader_parameter/parallax_strength = 0.05
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_jvakx"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("27_rpc27")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_7jwdt")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.3,
+"texture": ExtResource("25_cu10i")
+}, {
+"duration": 1.3,
+"texture": ExtResource("26_bj06y")
+}, {
+"duration": 1.3,
+"texture": ExtResource("27_rpc27")
+}, {
+"duration": 1.3,
+"texture": ExtResource("28_m0w88")
+}, {
+"duration": 1.3,
+"texture": ExtResource("29_p5k8n")
+}, {
+"duration": 1.3,
+"texture": ExtResource("30_7jwdt")
+}],
+"loop": true,
+"name": &"run",
+"speed": 12.0
+}]
 
 [sub_resource type="Resource" id="Resource_lf2sx"]
 script = ExtResource("11_h727k")
@@ -124,6 +168,15 @@ script = ExtResource("4_grav")
 [node name="PlayerMovement" type="Node2D" parent="." unique_id=526128340]
 script = ExtResource("5_player")
 
+[node name="PlayerAnim" type="AnimatedSprite2D" parent="PlayerMovement" unique_id=722604334]
+position = Vector2(263, 16)
+sprite_frames = SubResource("SpriteFrames_jvakx")
+animation = &"run"
+autoplay = "run"
+frame_progress = 0.056367557
+script = ExtResource("31_gsn6j")
+player_path = NodePath("../..")
+
 [node name="DigSystem" type="Node" parent="." unique_id=268976832]
 script = ExtResource("6_dig")
 
@@ -137,7 +190,7 @@ script = ExtResource("8_input")
 position = Vector2(0, -8)
 script = ExtResource("13_entr")
 
-[node name="EnemyController" type="Node2D" parent="."]
+[node name="EnemyController" type="Node2D" parent="." unique_id=1546530100]
 script = ExtResource("20_enemy")
 
 [node name="ArcadeHUD" type="CanvasLayer" parent="." unique_id=555877661]

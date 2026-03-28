@@ -63,13 +63,14 @@ func _draw() -> void:
 	var half: float = GridSystem.CELL_SIZE / 2.0
 	var size := Vector2(GridSystem.CELL_SIZE, GridSystem.CELL_SIZE)
 
-	# Player.
-	var p_local: Vector2 = to_local(_player.global_position)
-	var p_rect  := Rect2(p_local - Vector2(half, half), size)
-	if _player_texture != null:
-		draw_texture_rect(_player_texture, p_rect, false)
-	else:
-		draw_rect(p_rect, PLAYER_COLOUR)
+	# Player (only when the Player node has no dedicated visual child).
+	if not _player_has_embedded_visual():
+		var p_local: Vector2 = to_local(_player.global_position)
+		var p_rect  := Rect2(p_local - Vector2(half, half), size)
+		if _player_texture != null:
+			draw_texture_rect(_player_texture, p_rect, false)
+		else:
+			draw_rect(p_rect, PLAYER_COLOUR)
 
 	# Enemies.
 	for enemy in _enemies:
@@ -81,3 +82,14 @@ func _draw() -> void:
 			draw_texture_rect(_enemy_texture, e_rect, false)
 		else:
 			draw_rect(e_rect, ENEMY_COLOUR)
+
+
+func _player_has_embedded_visual() -> bool:
+	if _player == null:
+		return false
+	for child: Node in _player.get_children():
+		if child is AnimatedSprite2D and (child as AnimatedSprite2D).visible:
+			return true
+		if child is Sprite2D and (child as Sprite2D).visible:
+			return true
+	return false

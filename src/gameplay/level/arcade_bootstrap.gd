@@ -18,6 +18,19 @@ class_name ArcadeBootstrap
 extends Node
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+## Delay before reloading after death (seconds).
+const DEATH_RESTART_DELAY: float = 0.4
+
+## Delay before advancing after victory (seconds).
+const VICTORY_NEXT_LEVEL_DELAY: float = 1.0
+
+## Arcade scene directory used by numeric next-level discovery.
+const ARCADE_LEVELS_DIR: String = "res://scenes/levels/arcade"
+
+# ---------------------------------------------------------------------------
 # Exports — node references (assign from scene or inspector)
 # ---------------------------------------------------------------------------
 
@@ -70,6 +83,7 @@ var _origin: Vector2i = Vector2i.ZERO
 var _tile_size: Vector2 = Vector2(16.0, 16.0)
 var _dirt_layers: Array[TileMapLayer] = []  # Dirt TileMapLayers for dig visual updates
 var _dug_tiles: Dictionary = {}  # Stores tile data for restoration: tile_coord -> {layer, source_id, atlas_coords, alt_tile}
+var _transition_locked: bool = false
 
 # ---------------------------------------------------------------------------
 # Built-in virtual methods
@@ -169,7 +183,8 @@ func _ready() -> void:
 	# Step 8.5 — EntityRenderer (optional)
 	# -----------------------------------------------------------------------
 	if entity_renderer != null:
-		entity_renderer.setup(player, [])
+		entity_renderer.visible = false
+		entity_renderer.set_process(false)
 
 	# -----------------------------------------------------------------------
 	# Step 8.6 — BackgroundParallax (optional)
@@ -376,9 +391,6 @@ func _initialize_from_tilemap() -> void:
 			# Hide spawn marker at runtime (enemy sprite takes over)
 			if enemy_node is CanvasItem:
 				(enemy_node as CanvasItem).visible = false
-			# Add enemy to renderer
-			if entity_renderer != null:
-				entity_renderer.set_enemies([enemy])
 
 	push_warning("[ARC] Level initialised: %d×%d grid, %d pickups, exit at %s" % [
 		_grid_cols, _grid_rows, pickup_cells.size(), exit_cell
@@ -398,6 +410,8 @@ func _node2d_to_cell(node: Node2D, tile_size: Vector2) -> Vector2i:
 
 func _on_player_moved(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	push_warning("[ARC] Player moved %s → %s" % [from_cell, to_cell])
+	if _is_enemy_on_cell(to_cell):
+		_trigger_restart()
 
 
 ## dig_started(col: int, row: int) — matches DigSystem signal signature.
@@ -416,10 +430,20 @@ func _on_all_collected() -> void:
 
 func _on_player_won() -> void:
 	push_warning("[ARC] Player reached exit — LEVEL COMPLETE!")
+	if _transition_locked:
+		return
+	# Exit occupied by an enemy still counts as death, not victory.
+	if _is_enemy_on_cell(player.current_cell):
+		_trigger_restart()
+		return
+	_transition_locked = true
+	var timer: SceneTreeTimer = get_tree().create_timer(VICTORY_NEXT_LEVEL_DELAY)
+	timer.timeout.connect(_advance_to_next_arcade_level)
 
 
 func _on_enemy_reached_player(enemy_id: int, cell: Vector2i) -> void:
 	push_warning("[ARC] Enemy %d reached player at %s — PLAYER DIES!" % [enemy_id, cell])
+	_trigger_restart()
 
 
 func _on_enemy_trapped(enemy_id: int, cell: Vector2i) -> void:
@@ -437,7 +461,7 @@ func _on_back_requested() -> void:
 
 func _on_retry_requested() -> void:
 	push_warning("[ARC] Retry level requested")
-	get_tree().reload_current_scene()
+	_trigger_restart()
 
 
 ## dig_state_changed(col, row, old_state, new_state) — hides TileMap tiles when dug
@@ -467,3 +491,68 @@ func _on_dig_state_changed(col: int, row: int, old_state: TerrainSystem.DigState
 			var layer: TileMapLayer = data["layer"]
 			layer.set_cell(tile_coord, data["source_id"], data["atlas_coords"], data["alt_tile"])
 			_dug_tiles.erase(tile_coord)
+
+
+# ---------------------------------------------------------------------------
+# Transition helpers
+# ---------------------------------------------------------------------------
+
+func _trigger_restart() -> void:
+	if _transition_locked:
+		return
+	_transition_locked = true
+	if player != null and is_instance_valid(player):
+		player.die()
+	var timer: SceneTreeTimer = get_tree().create_timer(DEATH_RESTART_DELAY)
+	timer.timeout.connect(func() -> void:
+		get_tree().reload_current_scene()
+	)
+
+
+func _advance_to_next_arcade_level() -> void:
+	var current_scene: Node = get_tree().current_scene
+	if current_scene == null:
+		get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+		return
+	var next_scene_path: String = _compute_next_arcade_scene_path(
+		current_scene.scene_file_path
+	)
+	if not next_scene_path.is_empty() and FileAccess.file_exists(next_scene_path):
+		get_tree().change_scene_to_file(next_scene_path)
+		return
+	# No next arcade scene available yet: return to menu instead of stalling.
+	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
+func _is_enemy_on_cell(cell: Vector2i) -> bool:
+	return enemy != null and is_instance_valid(enemy) and enemy.current_cell == cell
+
+
+func _compute_next_arcade_scene_path(current_path: String) -> String:
+	if current_path.is_empty():
+		return ""
+	var dir_path: String = current_path.get_base_dir()
+	if not dir_path.begins_with(ARCADE_LEVELS_DIR):
+		return ""
+
+	var basename: String = current_path.get_file().get_basename()
+	var prefix: String = ""
+	var number_part: String = basename
+
+	var sep: int = basename.rfind("_")
+	if sep >= 0:
+		var tail: String = basename.substr(sep + 1)
+		if tail.is_valid_int():
+			prefix = basename.substr(0, sep + 1)
+			number_part = tail
+
+	if not number_part.is_valid_int():
+		return ""
+
+	var width: int = number_part.length()
+	var next_number: int = int(number_part) + 1
+	var next_number_text: String = str(next_number)
+	while next_number_text.length() < width:
+		next_number_text = "0" + next_number_text
+
+	return "%s/%s%s.tscn" % [dir_path, prefix, next_number_text]
