@@ -68,6 +68,8 @@ var _grid_cols: int = 0
 var _grid_rows: int = 0
 var _origin: Vector2i = Vector2i.ZERO
 var _tile_size: Vector2 = Vector2(16.0, 16.0)
+var _dirt_layers: Array[TileMapLayer] = []  # Dirt TileMapLayers for dig visual updates
+var _dug_tiles: Dictionary = {}  # Stores tile data for restoration: tile_coord -> {layer, source_id, atlas_coords, alt_tile}
 
 # ---------------------------------------------------------------------------
 # Built-in virtual methods
@@ -88,6 +90,8 @@ func _ready() -> void:
 	if input      == null: input      = p.get_node_or_null("InputSystem")    as InputSystem
 	if entity_renderer == null:
 		entity_renderer = p.get_node_or_null("EntityRenderer") as EntityRenderer
+	if enemy == null:
+		enemy = p.get_node_or_null("EnemyController") as EnemyController
 	if background_parallax == null:
 		var bg_layer: Node = p.get_node_or_null("BackgroundLayer")
 		if bg_layer != null:
@@ -205,6 +209,9 @@ func _ready() -> void:
 	pickups.pickup_collected.connect(_on_pickup_collected)
 	pickups.all_pickups_collected.connect(_on_all_collected)
 	pickups.player_reached_exit.connect(_on_player_won)
+	
+	# Connect terrain dig state changes to update TileMap visuals
+	terrain.dig_state_changed.connect(_on_dig_state_changed)
 
 # ---------------------------------------------------------------------------
 # Private methods
@@ -260,26 +267,26 @@ func _read_tilemap() -> void:
 		min_row = mini(min_row, cell.y)
 		max_row = maxi(max_row, cell.y)
 
-	# Extend bounds to include all entity Marker2D positions.
+	# Extend bounds to include all entity Node2D positions (Sprite2D or Marker2D).
 	# This prevents _origin from being AHEAD of spawn/exit/pickup positions,
 	# which would produce negative (invalid) grid cells.
 	var _p: Node = get_parent()
 	for bound_name: String in ["PlayerSpawn", "Exit"] as Array[String]:
 		var m: Node = _p.find_child(bound_name, true, false)
-		if m is Marker2D:
+		if m is Node2D:
 			var tc: Vector2i = Vector2i(
-				int((m as Marker2D).position.x / _tile_size.x),
-				int((m as Marker2D).position.y / _tile_size.y)
+				int((m as Node2D).position.x / _tile_size.x),
+				int((m as Node2D).position.y / _tile_size.y)
 			)
 			min_col = mini(min_col, tc.x)
 			max_col = maxi(max_col, tc.x)
 			min_row = mini(min_row, tc.y)
 			max_row = maxi(max_row, tc.y)
 	for node: Node in get_tree().get_nodes_in_group("Pickup"):
-		if node is Marker2D:
+		if node is Node2D:
 			var tc: Vector2i = Vector2i(
-				int((node as Marker2D).position.x / _tile_size.x),
-				int((node as Marker2D).position.y / _tile_size.y)
+				int((node as Node2D).position.x / _tile_size.x),
+				int((node as Node2D).position.y / _tile_size.y)
 			)
 			min_col = mini(min_col, tc.x)
 			max_col = maxi(max_col, tc.x)
@@ -301,6 +308,9 @@ func _read_tilemap() -> void:
 		if not layer_type_map.has(layer_name):
 			continue
 		var tile_type: int = layer_type_map[layer_name]
+		# Store dirt layers for dig visual updates
+		if tile_type == TerrainSystem.TileType.DIRT_SLOW or tile_type == TerrainSystem.TileType.DIRT_FAST:
+			_dirt_layers.append(layer)
 		for cell: Vector2i in layer.get_used_cells():
 			var col: int = cell.x - _origin.x
 			var row: int = cell.y - _origin.y
@@ -318,36 +328,34 @@ func _initialize_from_tilemap() -> void:
 	# grid_to_world(0, 0) maps to world (_origin * CELL_SIZE), not (0, 0).
 	grid.world_offset = Vector2(_origin) * GridSystem.CELL_SIZE
 
-	# Locate the PlayerSpawn Marker2D and spawn the player.
+	# Locate the PlayerSpawn node (Sprite2D or Marker2D) and spawn the player.
 	var spawn_node: Node = get_parent().find_child("PlayerSpawn", true, false)
-	if spawn_node == null or not spawn_node is Marker2D:
-		push_error("ArcadeBootstrap._initialize_from_tilemap: 'PlayerSpawn' Marker2D not found in scene.")
+	if spawn_node == null or not spawn_node is Node2D:
+		push_error("ArcadeBootstrap._initialize_from_tilemap: 'PlayerSpawn' not found in scene.")
 		return
-	var player_cell: Vector2i = _marker_to_cell(spawn_node as Marker2D, _tile_size)
+	var player_cell: Vector2i = _node2d_to_cell(spawn_node as Node2D, _tile_size)
 	player.spawn(player_cell)
+	# Hide spawn marker at runtime (player sprite takes over)
+	if spawn_node is CanvasItem:
+		(spawn_node as CanvasItem).visible = false
 
 	# Collect pickup cells from the "Pickup" group.
 	var pickup_cells: Array[Vector2i] = []
-	var pickup_index: int = 0
 	for node: Node in get_tree().get_nodes_in_group("Pickup"):
-		if node is Marker2D:
-			var cell: Vector2i = _marker_to_cell(node as Marker2D, _tile_size)
+		if node is Node2D:
+			var cell: Vector2i = _node2d_to_cell(node as Node2D, _tile_size)
 			pickup_cells.append(cell)
-			# Setup corresponding pickup sprite if it exists
-			var sprite_parent: Node = get_parent().get_node_or_null("PickupSprites")
-			if sprite_parent != null:
-				var sprite: Node = sprite_parent.get_child(pickup_index) if pickup_index < sprite_parent.get_child_count() else null
-				if sprite is PickupSprite:
-					(sprite as PickupSprite).setup(pickups, cell)
-			pickup_index += 1
+			# Setup pickup sprite to hide on collection
+			if node is PickupSprite:
+				(node as PickupSprite).setup(pickups, cell)
 
-	# Locate the Exit Marker2D.
+	# Locate the Exit node (Sprite2D or Marker2D).
 	var exit_node: Node = get_parent().find_child("Exit", true, false)
 	var exit_cell: Vector2i = Vector2i.ZERO
-	if exit_node != null and exit_node is Marker2D:
-		exit_cell = _marker_to_cell(exit_node as Marker2D, _tile_size)
+	if exit_node != null and exit_node is Node2D:
+		exit_cell = _node2d_to_cell(exit_node as Node2D, _tile_size)
 	else:
-		push_warning("ArcadeBootstrap._initialize_from_tilemap: 'Exit' Marker2D not found; exit defaults to (0, 0).")
+		push_warning("ArcadeBootstrap._initialize_from_tilemap: 'Exit' not found; exit defaults to (0, 0).")
 
 	pickups.initialize(pickup_cells, exit_cell)
 
@@ -358,23 +366,30 @@ func _initialize_from_tilemap() -> void:
 	# Spawn enemy from the first node in the "EnemySpawn" group (optional).
 	if enemy != null:
 		var enemy_nodes: Array[Node] = get_tree().get_nodes_in_group("EnemySpawn")
-		if not enemy_nodes.is_empty() and enemy_nodes[0] is Marker2D:
-			var enemy_cell: Vector2i = _marker_to_cell(enemy_nodes[0] as Marker2D, _tile_size)
+		if not enemy_nodes.is_empty() and enemy_nodes[0] is Node2D:
+			var enemy_node: Node2D = enemy_nodes[0] as Node2D
+			var enemy_cell: Vector2i = _node2d_to_cell(enemy_node, _tile_size)
 			enemy.spawn(enemy_cell, enemy_cell)
 			enemy.enemy_reached_player.connect(_on_enemy_reached_player)
 			enemy.enemy_trapped.connect(_on_enemy_trapped)
 			enemy.enemy_escaped.connect(_on_enemy_escaped)
+			# Hide spawn marker at runtime (enemy sprite takes over)
+			if enemy_node is CanvasItem:
+				(enemy_node as CanvasItem).visible = false
+			# Add enemy to renderer
+			if entity_renderer != null:
+				entity_renderer.set_enemies([enemy])
 
 	push_warning("[ARC] Level initialised: %d×%d grid, %d pickups, exit at %s" % [
 		_grid_cols, _grid_rows, pickup_cells.size(), exit_cell
 	])
 
 
-## Converts a Marker2D world position to a grid cell relative to _origin.
-func _marker_to_cell(marker: Marker2D, tile_size: Vector2) -> Vector2i:
+## Converts a Node2D world position to a grid cell relative to _origin.
+func _node2d_to_cell(node: Node2D, tile_size: Vector2) -> Vector2i:
 	return Vector2i(
-		int(marker.position.x / tile_size.x),
-		int(marker.position.y / tile_size.y)
+		int(node.position.x / tile_size.x),
+		int(node.position.y / tile_size.y)
 	) - _origin
 
 # ---------------------------------------------------------------------------
@@ -423,3 +438,32 @@ func _on_back_requested() -> void:
 func _on_retry_requested() -> void:
 	push_warning("[ARC] Retry level requested")
 	get_tree().reload_current_scene()
+
+
+## dig_state_changed(col, row, old_state, new_state) — hides TileMap tiles when dug
+func _on_dig_state_changed(col: int, row: int, old_state: TerrainSystem.DigState, new_state: TerrainSystem.DigState) -> void:
+	# Convert grid coords back to TileMap coords
+	var tile_coord: Vector2i = Vector2i(col + _origin.x, row + _origin.y)
+	
+	if new_state == TerrainSystem.DigState.OPEN:
+		# Tile is dug open — hide it in all dirt layers
+		for layer: TileMapLayer in _dirt_layers:
+			var source_id: int = layer.get_cell_source_id(tile_coord)
+			if source_id != -1:
+				# Store tile data for restoration
+				var atlas_coords: Vector2i = layer.get_cell_atlas_coords(tile_coord)
+				var alt_tile: int = layer.get_cell_alternative_tile(tile_coord)
+				_dug_tiles[tile_coord] = {
+					"layer": layer,
+					"source_id": source_id,
+					"atlas_coords": atlas_coords,
+					"alt_tile": alt_tile
+				}
+				layer.erase_cell(tile_coord)
+	elif new_state == TerrainSystem.DigState.INTACT and old_state == TerrainSystem.DigState.CLOSING:
+		# Hole closed and restored — restore the tile visually
+		if _dug_tiles.has(tile_coord):
+			var data: Dictionary = _dug_tiles[tile_coord]
+			var layer: TileMapLayer = data["layer"]
+			layer.set_cell(tile_coord, data["source_id"], data["atlas_coords"], data["alt_tile"])
+			_dug_tiles.erase(tile_coord)
