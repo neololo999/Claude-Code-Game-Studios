@@ -31,6 +31,12 @@ extends Node
 @export var enemy: EnemyController
 @export var entity_renderer: EntityRenderer
 
+## Background parallax controller (optional)
+@export var background_parallax: BackgroundParallax
+
+## Arcade HUD (optional)
+@export var hud: ArcadeHUD
+
 # ---------------------------------------------------------------------------
 # Exports — config resources (optional; fall back to defaults when null)
 # ---------------------------------------------------------------------------
@@ -82,6 +88,12 @@ func _ready() -> void:
 	if input      == null: input      = p.get_node_or_null("InputSystem")    as InputSystem
 	if entity_renderer == null:
 		entity_renderer = p.get_node_or_null("EntityRenderer") as EntityRenderer
+	if background_parallax == null:
+		var bg_layer: Node = p.get_node_or_null("BackgroundLayer")
+		if bg_layer != null:
+			background_parallax = bg_layer.get_node_or_null("Background") as BackgroundParallax
+	if hud == null:
+		hud = p.get_node_or_null("ArcadeHUD") as ArcadeHUD
 	if tilemap_root == null:
 		tilemap_root = p.get_node_or_null("TileMapRoot")
 
@@ -154,6 +166,20 @@ func _ready() -> void:
 	# -----------------------------------------------------------------------
 	if entity_renderer != null:
 		entity_renderer.setup(player, [])
+
+	# -----------------------------------------------------------------------
+	# Step 8.6 — BackgroundParallax (optional)
+	# -----------------------------------------------------------------------
+	if background_parallax != null:
+		background_parallax.player = player
+
+	# -----------------------------------------------------------------------
+	# Step 8.7 — ArcadeHUD (optional)
+	# -----------------------------------------------------------------------
+	if hud != null:
+		hud.setup(pickups)
+		hud.back_requested.connect(_on_back_requested)
+		hud.retry_requested.connect(_on_retry_requested)
 
 	# -----------------------------------------------------------------------
 	# Step 9 — EnemyController (optional)
@@ -302,9 +328,18 @@ func _initialize_from_tilemap() -> void:
 
 	# Collect pickup cells from the "Pickup" group.
 	var pickup_cells: Array[Vector2i] = []
+	var pickup_index: int = 0
 	for node: Node in get_tree().get_nodes_in_group("Pickup"):
 		if node is Marker2D:
-			pickup_cells.append(_marker_to_cell(node as Marker2D, _tile_size))
+			var cell: Vector2i = _marker_to_cell(node as Marker2D, _tile_size)
+			pickup_cells.append(cell)
+			# Setup corresponding pickup sprite if it exists
+			var sprite_parent: Node = get_parent().get_node_or_null("PickupSprites")
+			if sprite_parent != null:
+				var sprite: Node = sprite_parent.get_child(pickup_index) if pickup_index < sprite_parent.get_child_count() else null
+				if sprite is PickupSprite:
+					(sprite as PickupSprite).setup(pickups, cell)
+			pickup_index += 1
 
 	# Locate the Exit Marker2D.
 	var exit_node: Node = get_parent().find_child("Exit", true, false)
@@ -315,6 +350,10 @@ func _initialize_from_tilemap() -> void:
 		push_warning("ArcadeBootstrap._initialize_from_tilemap: 'Exit' Marker2D not found; exit defaults to (0, 0).")
 
 	pickups.initialize(pickup_cells, exit_cell)
+
+	# Initialize HUD with total pickups count.
+	if hud != null:
+		hud.initialize(pickup_cells.size())
 
 	# Spawn enemy from the first node in the "EnemySpawn" group (optional).
 	if enemy != null:
@@ -374,3 +413,13 @@ func _on_enemy_trapped(enemy_id: int, cell: Vector2i) -> void:
 
 func _on_enemy_escaped(enemy_id: int) -> void:
 	push_warning("[ARC] Enemy %d escaped and respawned!" % [enemy_id])
+
+
+func _on_back_requested() -> void:
+	push_warning("[ARC] Back to menu requested")
+	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+
+func _on_retry_requested() -> void:
+	push_warning("[ARC] Retry level requested")
+	get_tree().reload_current_scene()

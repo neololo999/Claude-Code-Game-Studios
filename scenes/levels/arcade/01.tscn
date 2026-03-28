@@ -1,7 +1,10 @@
 [gd_scene format=4 uid="uid://dkgrlmlhs4qtd"]
 
 [ext_resource type="Script" uid="uid://bmou5k85qy3no" path="res://src/gameplay/level/arcade_bootstrap.gd" id="1_boot"]
+[ext_resource type="Texture2D" uid="uid://1jdivvk1p6ut" path="res://assets/backgounds/level1x_background.png" id="2_bg"]
 [ext_resource type="Script" uid="uid://7xv4uk7ivbcn" path="res://src/systems/grid/grid_system.gd" id="2_grid"]
+[ext_resource type="Shader" uid="uid://d0w6ejmrqw0pq" path="res://resources/shaders/cyberpunk_background.gdshader" id="3_shader"]
+[ext_resource type="Script" path="res://src/systems/rendering/background_parallax.gd" id="3_bgpx"]
 [ext_resource type="Script" uid="uid://b6r06s1hrnbbe" path="res://src/systems/terrain/terrain_system.gd" id="3_terrain"]
 [ext_resource type="Script" uid="uid://dlu7vrvbefo3x" path="res://src/systems/gravity/grid_gravity.gd" id="4_grav"]
 [ext_resource type="Script" uid="uid://bifejkdfwmhdf" path="res://src/gameplay/player/player_movement.gd" id="5_player"]
@@ -14,6 +17,21 @@
 [ext_resource type="Script" uid="uid://dmponn1akwy3b" path="res://src/systems/rendering/entity_renderer.gd" id="13_entr"]
 [ext_resource type="Script" uid="uid://qheha3a5wwnr" path="res://src/systems/input/input_config.gd" id="13_wmf7t"]
 [ext_resource type="Script" uid="uid://f8a8aeoxxjgh" path="res://src/gameplay/enemy/enemy_config.gd" id="14_w3sau"]
+[ext_resource type="Texture2D" path="res://assets/sprites/terrain/pickup.png" id="15_pickup"]
+[ext_resource type="Texture2D" path="res://assets/sprites/terrain/exit.png" id="16_exit"]
+[ext_resource type="Script" path="res://src/systems/hud/arcade_hud.gd" id="17_hud"]
+[ext_resource type="Script" path="res://src/systems/rendering/pickup_sprite.gd" id="18_psprite"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cyberpunk"]
+shader = ExtResource("3_shader")
+shader_parameter/scanline_intensity = 0.35
+shader_parameter/scanline_count = 350.0
+shader_parameter/vignette_intensity = 0.25
+shader_parameter/vignette_softness = 0.6
+shader_parameter/pulse_speed = 0.5
+shader_parameter/pulse_intensity = 0.05
+shader_parameter/tint_color = Color(0.3, 0.6, 1, 1)
+shader_parameter/tint_strength = 0.0
 
 [sub_resource type="Resource" id="Resource_lf2sx"]
 script = ExtResource("11_h727k")
@@ -33,6 +51,21 @@ metadata/_custom_type_script = "uid://f8a8aeoxxjgh"
 
 [node name="01" type="Node2D" unique_id=1274333550]
 
+[node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=237790913]
+layer = -1
+
+[node name="Background" type="TextureRect" parent="BackgroundLayer" unique_id=501812830]
+material = SubResource("ShaderMaterial_cyberpunk")
+script = ExtResource("3_bgpx")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="TileMapRoot" type="Node2D" parent="." unique_id=1671359785]
 
 [node name="Solid" type="TileMapLayer" parent="TileMapRoot" unique_id=1457808747]
@@ -48,21 +81,24 @@ visible = false
 tile_set = ExtResource("12_ts")
 
 [node name="Ladder" type="TileMapLayer" parent="TileMapRoot" unique_id=449847123]
-tile_map_data = PackedByteArray("AAADAAwAAgAAAAAAAAADAAsAAgAAAAAAAAADAAoAAgAAAAAAAAADAAkAAgAAAAAAAAADAAYAAgAAAAAAAAADAAcAAgAAAAAAAAADAAgAAgAAAAAAAAAEAAUAAgAAAAAAAAAEAAQAAgAAAAAAAAAEAAMAAgAAAAAAAAAEAAIAAgAAAAAAAAAEAAEAAgAAAAAAAAAQAAYAAgAAAAAAAAAQAAcAAgAAAAAAAAAQAAgAAgAAAAAAAAAQAAsAAgAAAAAAAAADAA0AAgAAAAAAAAADAA4AAgAAAAAAAAADAA8AAgAAAAAAAAADABAAAgAAAAAAAAADABEAAgAAAAAAAAADABIAAgAAAAAAAAADABMAAgAAAAAAAAADABQAAgAAAAAAAAAPABMABAADAAIAAAAeAAYAAgAAAAAAAAAeAAUAAgAAAAAAAAAeAAQAAgAAAAAAAAAeAAMAAgAAAAAAAAAeAAIAAgAAAAAAAAAeAAEAAgAAAAAAAAAUAAMAAgAAAAAAAAAUAAIAAgAAAAAAAAAUAAEAAgAAAAAAAAAUAAAAAgAAAAAAAAAdABAAAgAAAAAAAAAdAA8AAgAAAAAAAAAdAA4AAgAAAAAAAAAdAA0AAgAAAAAAAAAdAAwAAgAAAAAAAAAQAAoAAgAAAAAAAAAQAAkAAgAAAAAAAAALAAIAAQAEAAAAAAAMAAIAAQAEAAAAAAANAAIAAQAEAAAAAAAOAAIAAQAEAAAAAAAPAAIAAQAEAAAAAAAQAAIAAQAEAAAAAAARAAIAAQAEAAAAAAASAAIAAQAEAAAAAAATAAIAAQAEAAAAAAAdAAIAAQAEAAAAAAAcAAIAAQAEAAAAAAAbAAIAAQAEAAAAAAAaAAIAAQAEAAAAAAAZAAIAAQAEAAAAAAA=")
+tile_map_data = PackedByteArray("AAADAAwAAgAAAAAAAAADAAsAAgAAAAAAAAADAAoAAgAAAAAAAAADAAkAAgAAAAAAAAADAAYAAgAAAAAAAAADAAcAAgAAAAAAAAADAAgAAgAAAAAAAAAEAAUAAgAAAAAAAAAEAAQAAgAAAAAAAAAEAAMAAgAAAAAAAAAEAAIAAgAAAAAAAAAEAAEAAgAAAAAAAAAQAAYAAgAAAAAAAAAQAAcAAgAAAAAAAAAQAAgAAgAAAAAAAAAQAAsAAgAAAAAAAAADAA0AAgAAAAAAAAADAA4AAgAAAAAAAAADAA8AAgAAAAAAAAADABAAAgAAAAAAAAADABEAAgAAAAAAAAADABIAAgAAAAAAAAADABMAAgAAAAAAAAADABQAAgAAAAAAAAAPABMABAADAAIAAAAeAAYAAgAAAAAAAAAeAAUAAgAAAAAAAAAeAAQAAgAAAAAAAAAeAAMAAgAAAAAAAAAeAAIAAgAAAAAAAAAeAAEAAgAAAAAAAAAUAAMAAgAAAAAAAAAUAAIAAgAAAAAAAAAUAAEAAgAAAAAAAAAUAAAAAgAAAAAAAAAdABAAAgAAAAAAAAAdAA8AAgAAAAAAAAAdAA4AAgAAAAAAAAAdAA0AAgAAAAAAAAAdAAwAAgAAAAAAAAAQAAoAAgAAAAAAAAAQAAkAAgAAAAAAAAA=")
 tile_set = ExtResource("12_ts")
 
 [node name="Rope" type="TileMapLayer" parent="TileMapRoot" unique_id=1611119779]
-visible = false
+tile_map_data = PackedByteArray("AAALAAIAAwAMAAUAAAAMAAIAAwAMAAUAAAANAAIAAwAMAAUAAAAOAAIAAwAMAAUAAAAPAAIAAwAMAAUAAAAQAAIAAwAMAAUAAAARAAIAAwAMAAUAAAASAAIAAwAMAAUAAAATAAIAAwAMAAUAAAAZAAIAAwAMAAUAAAAaAAIAAwAMAAUAAAAbAAIAAwAMAAUAAAAcAAIAAwAMAAUAAAAdAAIAAwAMAAUAAAAQAA8AAwACAAEAAAARAA8AAwACAAEAAAASAA8AAwACAAEAAAATAA8AAwACAAEAAAAUAA8AAwACAAEAAAAVAA8AAwACAAEAAAAWAA8AAwACAAEAAAAXAA8AAwACAAEAAAAYAA8AAwACAAEAAAAZAA8AAwACAAEAAAAaAA8AAwACAAEAAAAbAA8AAwACAAEAAAA=")
 tile_set = ExtResource("12_ts")
 
 [node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1552912907]
-position = Vector2(1088, 640)
+position = Vector2(264, 21)
 
 [node name="Exit" type="Marker2D" parent="." unique_id=303348952]
 position = Vector2(1184, 640)
 
 [node name="Pickup1" type="Marker2D" parent="." unique_id=2043716485 groups=["Pickup"]]
 position = Vector2(264, 104)
+
+[node name="EnemySpawn1" type="Marker2D" parent="." groups=["EnemySpawn"]]
+position = Vector2(320, 320)
 
 [node name="GridSystem" type="Node" parent="." unique_id=1941431900]
 script = ExtResource("2_grid")
@@ -89,21 +125,28 @@ script = ExtResource("8_input")
 position = Vector2(0, -8)
 script = ExtResource("13_entr")
 
-[node name="PickupRenderer" type="Node2D" parent="." unique_id=777888999]
+[node name="PickupSprites" type="Node2D" parent="."]
 
-[node name="Pickup1" type="ColorRect" parent="PickupRenderer" unique_id=111222333]
-offset_left = 456.0
-offset_top = 608.0
-offset_right = 488.0
-offset_bottom = 640.0
-color = Color(0, 0.8, 1, 0.8)
+[node name="Pickup1Sprite" type="Sprite2D" parent="PickupSprites"]
+script = ExtResource("18_psprite")
+position = Vector2(264, 104)
+texture = ExtResource("15_pickup")
 
-[node name="Exit" type="ColorRect" parent="PickupRenderer" unique_id=987654321]
-offset_left = 1184.0
-offset_top = 640.0
-offset_right = 1216.0
-offset_bottom = 672.0
-color = Color(1, 1, 0, 0.8)
+[node name="ExitSprite" type="Sprite2D" parent="PickupSprites"]
+position = Vector2(1184, 640)
+texture = ExtResource("16_exit")
+
+[node name="ArcadeHUD" type="CanvasLayer" parent="."]
+layer = 10
+script = ExtResource("17_hud")
+
+[node name="PickupLabel" type="Label" parent="ArcadeHUD"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 200.0
+offset_bottom = 48.0
+theme_override_font_sizes/font_size = 24
+text = "💎 0 / 0"
 
 [node name="ArcadeBootstrap" type="Node" parent="." unique_id=1324859599 node_paths=PackedStringArray("grid", "terrain", "gravity", "player", "dig", "pickups", "input", "entity_renderer", "tilemap_root")]
 script = ExtResource("1_boot")
